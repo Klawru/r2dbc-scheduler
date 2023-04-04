@@ -7,10 +7,15 @@
 
     <artifactId>r2dbc-scheduler-spring-boot-starter</artifactId>
     <version>0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Spring-boot starter for r2dbc-scheduler</description>
+    <url>https://gitlab.com/klawru/r2dbc-scheduler</url>
 
     <parent>
         <artifactId>parent-r2dbc-scheduler</artifactId>
-        <groupId>com.github.klawru</groupId>
+        <groupId>io.gitlab.klawru</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
@@ -21,7 +26,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.klawru</groupId>
+            <groupId>io.gitlab.klawru</groupId>
             <artifactId>r2dbc-scheduler</artifactId>
             <version>${project.version}</version>
         </dependency>

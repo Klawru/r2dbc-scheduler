@@ -11,7 +11,7 @@
 
     <logger name="org.testcontainers" level="INFO"/>
     <logger name="com.github.dockerjava" level="WARN"/>
-    <logger name="com.github.klawru.scheduler" level="DEBUG"/>
-    <logger name="com.github.klawru.scheduler.query" level="DEBUG"/>
+    <logger name="io.gitlab.klawru.scheduler" level="DEBUG"/>
+    <logger name="io.gitlab.klawru.scheduler.query" level="DEBUG"/>
 
 </configuration>
