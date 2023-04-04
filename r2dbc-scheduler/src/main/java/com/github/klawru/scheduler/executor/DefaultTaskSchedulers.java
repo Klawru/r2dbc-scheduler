@@ -15,35 +15,34 @@
  */
 package com.github.klawru.scheduler.executor;
 
-import com.github.klawru.scheduler.config.SchedulerConfig;
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import lombok.Getter;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 @Getter
 public class DefaultTaskSchedulers implements TaskSchedulers {
+    private static final String THREAD_PREFIX = "r2dbc";
     private final Scheduler housekeeperScheduler;
     private final Scheduler taskScheduler;
     private final int taskThreads;
     private final int taskLowerLimit;
     private final int taskUpperLimit;
 
-    public DefaultTaskSchedulers(SchedulerConfig schedulerConfig) {
-        this(schedulerConfig.getSchedulerName(),
-                2,
+    public DefaultTaskSchedulers(SchedulerConfiguration schedulerConfig) {
+        this(2,
                 schedulerConfig.getThreads(),
                 (int) schedulerConfig.getLowerLimitFractionOfThreads() * schedulerConfig.getThreads(),
                 (int) schedulerConfig.getUpperLimitFractionOfThreads() * schedulerConfig.getThreads());
     }
 
-    public DefaultTaskSchedulers(String schedulerName,
-                                 int housekeeperThreads,
+    public DefaultTaskSchedulers(int housekeeperThreads,
                                  int taskThreads,
                                  int taskLowerLimit,
                                  int taskUpperLimit) {
         this(taskThreads, taskLowerLimit, taskUpperLimit,
-                Schedulers.newParallel(schedulerName + "-housekeeper", housekeeperThreads),
-                Schedulers.newBoundedElastic(taskThreads, taskUpperLimit, schedulerName + "-task"));
+                Schedulers.newParallel(THREAD_PREFIX + "-housekeeper-", housekeeperThreads),
+                Schedulers.newBoundedElastic(taskThreads, taskUpperLimit, THREAD_PREFIX + "-task-"));
     }
 
     public DefaultTaskSchedulers(int taskThreads,

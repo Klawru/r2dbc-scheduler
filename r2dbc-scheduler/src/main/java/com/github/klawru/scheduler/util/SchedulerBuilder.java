@@ -92,6 +92,7 @@ public class SchedulerBuilder {
 
     public SchedulerClient build() {
         SchedulerConfig config = schedulerConfig.build();
+        config.validate();
 
         if (r2dbcClient == null)
             r2dbcClient = new R2dbcClient(DatabaseClient.builder()

@@ -17,7 +17,7 @@
 package com.github.klawru.scheduler.service;
 
 import com.github.klawru.scheduler.StartPauseService;
-import com.github.klawru.scheduler.config.SchedulerConfig;
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import com.github.klawru.scheduler.executor.TaskSchedulers;
 import com.github.klawru.scheduler.repository.TaskService;
 import com.github.klawru.scheduler.util.AlwaysDisposed;
@@ -34,12 +34,12 @@ public class DeleteUnresolvedTaskService implements StartPauseService {
 
     private final TaskService taskService;
     private final TaskSchedulers schedulers;
-    private final SchedulerConfig config;
+    private final SchedulerConfiguration config;
     private Disposable subscription;
 
     public DeleteUnresolvedTaskService(TaskService taskService,
                                        TaskSchedulers schedulers,
-                                       SchedulerConfig config) {
+                                       SchedulerConfiguration config) {
         this.taskService = taskService;
         this.schedulers = schedulers;
         this.config = config;
@@ -52,7 +52,6 @@ public class DeleteUnresolvedTaskService implements StartPauseService {
             log.debug("Start delete unresolved task");
             Duration pollingInterval = config.getPollingInterval().multipliedBy(10);
             this.subscription = taskService.deleteUnresolvedTask(config.getDeleteUnresolvedAfter())
-                    .doOnSubscribe(s -> log.debug("DeleteUnresolvedTaskService"))
                     .doOnNext(deleted -> log.debug("removed by delete unresolved task count={}", deleted))
                     .doOnError(throwable -> log.error("Exception on delete unresolved task", throwable))
                     .repeatWhen(longFlux -> Mono.delay(pollingInterval, schedulers.getHousekeeperScheduler()))

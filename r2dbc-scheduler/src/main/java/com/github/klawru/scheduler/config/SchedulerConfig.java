@@ -24,32 +24,66 @@ import java.time.Duration;
 
 @Value
 @Builder
-public class SchedulerConfig {
+public class SchedulerConfig implements SchedulerConfiguration {
 
+    public static final int THREADS_DEFAULT = 10;
+    public static final Duration POLLING_INTERVAL_DEFAULT = Duration.ofSeconds(10);
+    public static final Duration UNRESOLVED_DELETE_INTERVAL_DEFAULT = Duration.ofDays(14);
+    public static final Duration SHUTDOWN_MAX_WAIT_DEFAULT = Duration.ofMinutes(10);
+    public static final double LOWER_LIMIT_FRACTION_OF_THREADS_DEFAULT = 0.5;
+    public static final double UPPER_LIMIT_FRACTION_OF_THREADS_DEFAULT = 1;
+    public static final Duration HEARTBEAT_INTERVAL_DEFAULT = Duration.ofMinutes(5);
+    public static final String TABLE_NAME_DEFAULT = "scheduled_job";
+    public static final Duration DELETE_UNRESOLVED_AFTER_DEFAULT = Duration.ofDays(14);
+    /**
+     * Number threads for tasks
+     */
     @Builder.Default
-    int threads = 10;
+    int threads = THREADS_DEFAULT;
+    /**
+     * How often tasks are checked
+     */
     @Builder.Default
-    Duration pollingInterval = Duration.ofSeconds(10);
+    Duration pollingInterval = POLLING_INTERVAL_DEFAULT;
+    /**
+     * Time after which unknown tasks are deleted
+     */
     @Builder.Default
-    Duration unresolvedDeleteInterval = Duration.ofSeconds(10);
+    Duration unresolvedDeleteInterval = UNRESOLVED_DELETE_INTERVAL_DEFAULT;
+    /**
+     * The maximum time given for the scheduler to complete
+     */
     @Builder.Default
-    Duration shutdownMaxWait = Duration.ofMinutes(10);
-
+    Duration shutdownMaxWait = SHUTDOWN_MAX_WAIT_DEFAULT;
+    /**
+     * The lower threshold of executable tasks at which new ones will be loaded. Depends on the number of threads.
+     */
     @Builder.Default
-    double lowerLimitFractionOfThreads = 0.5;
+    double lowerLimitFractionOfThreads = LOWER_LIMIT_FRACTION_OF_THREADS_DEFAULT;
+    /**
+     * The maximum number of tasks loaded for execution. Depends on the number of threads.
+     */
     @Builder.Default
-    double upperLimitFractionOfThreads = 1;
-
+    double upperLimitFractionOfThreads = UPPER_LIMIT_FRACTION_OF_THREADS_DEFAULT;
+    /**
+     * How often is heartbeat updated for executable tasks
+     */
     @Builder.Default
-    Duration heartbeatInterval = Duration.ofMinutes(5);
-
+    Duration heartbeatInterval = HEARTBEAT_INTERVAL_DEFAULT;
+    /**
+     * The name of this scheduler instance.
+     */
     String schedulerName;
-
+    /**
+     * The name of this scheduler table in DB.
+     */
     @Builder.Default
-    String tableName = "scheduled_job";
-
+    String tableName = TABLE_NAME_DEFAULT;
+    /**
+     * Time after which unknown tasks will be deleted.
+     */
     @Builder.Default
-    Duration deleteUnresolvedAfter = Duration.ofDays(14);
+    Duration deleteUnresolvedAfter = DELETE_UNRESOLVED_AFTER_DEFAULT;
 
 
     public void validate() {

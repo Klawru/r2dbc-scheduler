@@ -15,7 +15,7 @@
  */
 package com.github.klawru.scheduler;
 
-import com.github.klawru.scheduler.config.SchedulerConfig;
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import com.github.klawru.scheduler.executor.Execution;
 import com.github.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import com.github.klawru.scheduler.task.instance.TaskInstance;
@@ -50,7 +50,7 @@ public interface SchedulerClient extends StartPauseService, AutoCloseable {
 
     void detectDeadExecution();
 
-    SchedulerConfig getConfig();
+    SchedulerConfiguration getConfig();
 
     Flux<Execution<?>> getAllExecution();
 
