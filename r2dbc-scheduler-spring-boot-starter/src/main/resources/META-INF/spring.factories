@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.github.klawru.scheduler.boot.R2dbcSchedulerAutoConfiguration
+io.gitlab.klawru.scheduler.boot.R2dbcSchedulerAutoConfiguration
