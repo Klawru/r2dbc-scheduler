@@ -17,7 +17,7 @@
 package com.github.klawru.scheduler.service;
 
 import com.github.klawru.scheduler.StartPauseService;
-import com.github.klawru.scheduler.config.SchedulerConfig;
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import com.github.klawru.scheduler.executor.Execution;
 import com.github.klawru.scheduler.executor.TaskExecutor;
 import com.github.klawru.scheduler.executor.TaskSchedulers;
@@ -36,7 +36,7 @@ import java.util.Optional;
 public class UpdateHeartbeatService implements StartPauseService {
 
     private final TaskExecutor executor;
-    private final SchedulerConfig config;
+    private final SchedulerConfiguration config;
     private final TaskSchedulers schedulers;
     private final TaskService taskService;
 
@@ -45,7 +45,7 @@ public class UpdateHeartbeatService implements StartPauseService {
     public UpdateHeartbeatService(TaskService taskService,
                                   TaskExecutor executor,
                                   TaskSchedulers schedulers,
-                                  SchedulerConfig config) {
+                                  SchedulerConfiguration config) {
         this.taskService = taskService;
         this.executor = executor;
         this.schedulers = schedulers;

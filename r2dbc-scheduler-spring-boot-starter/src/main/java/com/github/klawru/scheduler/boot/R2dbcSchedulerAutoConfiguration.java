@@ -34,10 +34,8 @@ import com.github.klawru.scheduler.task.AbstractTask;
 import com.github.klawru.scheduler.util.Clock;
 import com.github.klawru.scheduler.util.SchedulerBuilder;
 import io.r2dbc.spi.ConnectionFactory;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -46,12 +44,10 @@ import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration;
 import org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.r2dbc.core.DatabaseClient;
 
 import java.util.List;
 
-@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(R2dbcSchedulerProperties.class)
 @AutoConfigureAfter({R2dbcAutoConfiguration.class, SqlInitializationAutoConfiguration.class})
 @ConditionalOnBean(ConnectionFactory.class)
@@ -122,7 +118,7 @@ public class R2dbcSchedulerAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     TaskSchedulers taskSchedulers() {
-        return new DefaultTaskSchedulers(schedulerConfig.toConfig().build());
+        return new DefaultTaskSchedulers(schedulerConfig);
     }
 
 

@@ -17,25 +17,58 @@
 package com.github.klawru.scheduler.boot;
 
 import com.github.klawru.scheduler.config.SchedulerConfig;
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
+import static com.github.klawru.scheduler.config.SchedulerConfig.*;
+
 @Data
 @ConfigurationProperties("r2dbc-scheduler")
-public class R2dbcSchedulerProperties {
+public class R2dbcSchedulerProperties implements SchedulerConfiguration {
     private boolean enabled;
-    private int threads = 10;
-    private Duration pollingInterval = Duration.ofSeconds(10);
-    private Duration unresolvedDeleteInterval = Duration.ofSeconds(10);
-    private Duration shutdownMaxWait = Duration.ofMinutes(10);
-    private double lowerLimitFractionOfThreads = 0.5;
-    private double upperLimitFractionOfThreads = 1;
-    private Duration heartbeatInterval = Duration.ofMinutes(5);
+    /**
+     * Number threads for tasks
+     */
+    private int threads = THREADS_DEFAULT;
+    /**
+     * How often tasks are checked
+     */
+    private Duration pollingInterval = POLLING_INTERVAL_DEFAULT;
+    /**
+     * Time after which unknown tasks are deleted
+     */
+    private Duration unresolvedDeleteInterval = UNRESOLVED_DELETE_INTERVAL_DEFAULT;
+    /**
+     * The maximum time given for the scheduler to complete
+     */
+    private Duration shutdownMaxWait = SHUTDOWN_MAX_WAIT_DEFAULT;
+    /**
+     * The lower threshold of executable tasks at which new ones will be loaded. Depends on the number of threads.
+     */
+    private double lowerLimitFractionOfThreads = LOWER_LIMIT_FRACTION_OF_THREADS_DEFAULT;
+    /**
+     * The maximum number of tasks loaded for execution. Depends on the number of threads.
+     */
+    private double upperLimitFractionOfThreads = UPPER_LIMIT_FRACTION_OF_THREADS_DEFAULT;
+    /**
+     * How often is heartbeat updated for executable tasks
+     */
+    private Duration heartbeatInterval = HEARTBEAT_INTERVAL_DEFAULT;
+    /**
+     * The name of this scheduler instance.
+     */
     private String schedulerName;
-    private String tableName = "scheduled_job";
-    private Duration deleteUnresolvedAfter = Duration.ofDays(14);
+    /**
+     * The name of this scheduler table in DB.
+     */
+    private String tableName = TABLE_NAME_DEFAULT;
+    /**
+     * Time after which unknown tasks will be deleted.
+     */
+    private Duration deleteUnresolvedAfter = DELETE_UNRESOLVED_AFTER_DEFAULT;
 
     SchedulerConfig.SchedulerConfigBuilder toConfig() {
         return com.github.klawru.scheduler.config.SchedulerConfig.builder()

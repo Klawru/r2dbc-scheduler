@@ -15,16 +15,16 @@
  */
 package com.github.klawru.scheduler;
 
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import com.github.klawru.scheduler.executor.Execution;
 import com.github.klawru.scheduler.executor.TaskExecutor;
-import com.github.klawru.scheduler.stats.SchedulerMetricsRegistry;
-import com.github.klawru.scheduler.config.SchedulerConfig;
 import com.github.klawru.scheduler.executor.TaskSchedulers;
 import com.github.klawru.scheduler.repository.TaskService;
 import com.github.klawru.scheduler.service.DeadExecutionDetectService;
 import com.github.klawru.scheduler.service.DeleteUnresolvedTaskService;
 import com.github.klawru.scheduler.service.TaskFetchService;
 import com.github.klawru.scheduler.service.UpdateHeartbeatService;
+import com.github.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import com.github.klawru.scheduler.task.instance.TaskInstance;
 import com.github.klawru.scheduler.task.instance.TaskInstanceId;
 import com.github.klawru.scheduler.util.Clock;
@@ -43,7 +43,7 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     private final TaskService taskService;
     private final TaskExecutor executor;
     private final TaskSchedulers schedulers;
-    private final SchedulerConfig config;
+    private final SchedulerConfiguration config;
     private final Clock clock;
 
     @Getter
@@ -54,7 +54,7 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     private final DeadExecutionDetectService deadExecutionDetectService;
     private final DeleteUnresolvedTaskService deleteUnresolvedTaskService;
 
-    public DefaultSchedulerClient(TaskService taskService, TaskExecutor executor, TaskSchedulers schedulers, SchedulerMetricsRegistry schedulerMetricsRegistry, SchedulerConfig config, Clock clock) {
+    public DefaultSchedulerClient(TaskService taskService, TaskExecutor executor, TaskSchedulers schedulers, SchedulerMetricsRegistry schedulerMetricsRegistry, SchedulerConfiguration config, Clock clock) {
         this.taskService = taskService;
         this.executor = executor;
         this.schedulers = schedulers;
@@ -65,7 +65,6 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
         this.updateHeartbeatService = new UpdateHeartbeatService(this.taskService, this.executor, this.schedulers, this.config);
         this.deadExecutionDetectService = new DeadExecutionDetectService(this.taskService, this.schedulers, this.config);
         this.deleteUnresolvedTaskService = new DeleteUnresolvedTaskService(this.taskService, this.schedulers, this.config);
-        config.validate();
     }
 
     @Override
@@ -182,7 +181,7 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     }
 
     @Override
-    public SchedulerConfig getConfig() {
+    public SchedulerConfiguration getConfig() {
         return config;
     }
 

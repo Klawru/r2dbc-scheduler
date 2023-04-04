@@ -19,13 +19,13 @@ package com.github.klawru.scheduler.service;
 import com.github.klawru.scheduler.DefaultExecutionOperations;
 import com.github.klawru.scheduler.DefaultSchedulerClient;
 import com.github.klawru.scheduler.StartPauseService;
-import com.github.klawru.scheduler.config.SchedulerConfig;
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import com.github.klawru.scheduler.executor.Execution;
 import com.github.klawru.scheduler.executor.TaskExecutor;
-import com.github.klawru.scheduler.repository.TaskService;
-import com.github.klawru.scheduler.util.Trigger;
 import com.github.klawru.scheduler.executor.TaskSchedulers;
+import com.github.klawru.scheduler.repository.TaskService;
 import com.github.klawru.scheduler.task.DefaultExecutionContext;
+import com.github.klawru.scheduler.util.Trigger;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.Disposable;
@@ -40,14 +40,14 @@ public class TaskFetchService implements StartPauseService {
     private final DefaultSchedulerClient client;
     private final TaskExecutor executor;
     private final TaskService taskService;
-    private final SchedulerConfig config;
+    private final SchedulerConfiguration config;
     private final TaskSchedulers schedulers;
     private final Trigger triggerFetch;
 
 
     Disposable taskFetchStream;
 
-    public TaskFetchService(DefaultSchedulerClient client, TaskService taskService, TaskExecutor executor, TaskSchedulers schedulers, SchedulerConfig config) {
+    public TaskFetchService(DefaultSchedulerClient client, TaskService taskService, TaskExecutor executor, TaskSchedulers schedulers, SchedulerConfiguration config) {
         this.client = client;
         this.executor = executor;
         this.taskService = taskService;

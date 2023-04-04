@@ -17,11 +17,11 @@
 package com.github.klawru.scheduler.service;
 
 import com.github.klawru.scheduler.StartPauseService;
-import com.github.klawru.scheduler.config.SchedulerConfig;
-import com.github.klawru.scheduler.repository.TaskService;
-import com.github.klawru.scheduler.util.Trigger;
+import com.github.klawru.scheduler.config.SchedulerConfiguration;
 import com.github.klawru.scheduler.executor.TaskSchedulers;
+import com.github.klawru.scheduler.repository.TaskService;
 import com.github.klawru.scheduler.util.AlwaysDisposed;
+import com.github.klawru.scheduler.util.Trigger;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
@@ -35,13 +35,13 @@ public class DeadExecutionDetectService implements StartPauseService {
 
     private final TaskService taskService;
     private final TaskSchedulers schedulers;
-    private final SchedulerConfig config;
+    private final SchedulerConfiguration config;
     private final Trigger trigger;
     private Disposable deadExecutionDetectDisposable;
 
     public DeadExecutionDetectService(TaskService taskService,
                                       TaskSchedulers schedulers,
-                                      SchedulerConfig config) {
+                                      SchedulerConfiguration config) {
         this.taskService = taskService;
         this.schedulers = schedulers;
         this.config = config;
