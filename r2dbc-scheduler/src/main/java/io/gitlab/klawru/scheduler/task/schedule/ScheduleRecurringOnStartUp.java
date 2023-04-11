@@ -16,12 +16,12 @@
  */
 package io.gitlab.klawru.scheduler.task.schedule;
 
-import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
-import io.gitlab.klawru.scheduler.util.Clock;
 import io.gitlab.klawru.scheduler.SchedulerClient;
+import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.task.RecurringTask;
+import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
+import io.gitlab.klawru.scheduler.util.Clock;
 import io.gitlab.klawru.scheduler.util.MapperUtil;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +45,7 @@ public class ScheduleRecurringOnStartUp<T> {
             log.info("Task {} marked as disabled", taskInstance.getTaskNameId());
             return client.getExecution(taskInstance)
                     .doOnNext(tExecution -> log.info("The task {} will be disabled", taskInstance.getTaskNameId()))
-                    .flatMap(client::cancel);
+                    .flatMap((Execution<T> e) -> client.cancel(e.getTaskInstance()));
         } else {
             return client.getExecution(taskInstance)
                     .as(MapperUtil::mapToOptional)

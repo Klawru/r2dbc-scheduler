@@ -33,14 +33,14 @@ public class TaskResolver {
     private final Clock clock;
     private final SchedulerMetricsRegistry registry;
 
-    public TaskResolver(List<AbstractTask<?>> tasks, SchedulerMetricsRegistry schedulerMetricsRegistry, Clock clock) {
+    public TaskResolver(Collection<AbstractTask<?>> tasks, SchedulerMetricsRegistry schedulerMetricsRegistry, Clock clock) {
         this.registry = schedulerMetricsRegistry;
         this.taskMap = new HashMap<>();
         this.clock = clock;
         add(tasks);
     }
 
-    public void add(List<AbstractTask<?>> tasks) {
+    public void add(Collection<AbstractTask<?>> tasks) {
         for (AbstractTask<?> abstractTask : tasks) {
             taskMap.put(abstractTask.getName(), abstractTask);
         }

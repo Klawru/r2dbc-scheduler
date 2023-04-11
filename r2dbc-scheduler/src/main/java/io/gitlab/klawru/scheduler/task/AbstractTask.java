@@ -17,11 +17,11 @@
 package io.gitlab.klawru.scheduler.task;
 
 
+import io.gitlab.klawru.scheduler.ExecutionOperations;
 import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.task.callback.CompletionHandler;
-import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
-import io.gitlab.klawru.scheduler.ExecutionOperations;
 import io.gitlab.klawru.scheduler.task.callback.DeadExecutionHandler;
+import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import lombok.Getter;
 import lombok.NonNull;

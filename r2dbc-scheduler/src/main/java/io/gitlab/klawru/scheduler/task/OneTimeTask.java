@@ -17,8 +17,8 @@
 package io.gitlab.klawru.scheduler.task;
 
 import io.gitlab.klawru.scheduler.task.callback.CompletionHandler;
-import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
 import io.gitlab.klawru.scheduler.task.callback.DeadExecutionHandler;
+import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
 import io.gitlab.klawru.scheduler.task.instance.NextExecutionTime;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 

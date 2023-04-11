@@ -16,7 +16,6 @@
 package io.gitlab.klawru.scheduler.stats;
 
 import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
 import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionStateName;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,7 +27,7 @@ public class SchedulerMetricsRegistry implements SchedulerListener {
 
     @Override
     public void afterExecution(Execution<?> execution) {
-        ExecutionStateName state = execution.getLastState(ExecutionStateName.COMPLETE).map(ExecutionState::getName).orElse(null);
+        ExecutionStateName state = execution.getLastState().getName();
         if (ExecutionStateName.COMPLETE.equals(state)) {
             completeTaskCount.incrementAndGet();
         } else {
@@ -36,7 +35,7 @@ public class SchedulerMetricsRegistry implements SchedulerListener {
         }
     }
 
-    public long getAllTask() {
+    public long getCountExecutedTask() {
         return completeTaskCount.get() + failedTaskCount.get();
     }
 

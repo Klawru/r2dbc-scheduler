@@ -29,11 +29,11 @@ public class DefaultTaskSchedulers implements TaskSchedulers {
     private final int taskLowerLimit;
     private final int taskUpperLimit;
 
-    public DefaultTaskSchedulers(SchedulerConfiguration schedulerConfig) {
+    public DefaultTaskSchedulers(SchedulerConfiguration schedulerConfiguration) {
         this(2,
-                schedulerConfig.getThreads(),
-                (int) schedulerConfig.getLowerLimitFractionOfThreads() * schedulerConfig.getThreads(),
-                (int) schedulerConfig.getUpperLimitFractionOfThreads() * schedulerConfig.getThreads());
+                schedulerConfiguration.getThreads(),
+                (int) schedulerConfiguration.getLowerLimitFractionOfThreads() * schedulerConfiguration.getThreads(),
+                (int) schedulerConfiguration.getUpperLimitFractionOfThreads() * schedulerConfiguration.getThreads());
     }
 
     public DefaultTaskSchedulers(int housekeeperThreads,

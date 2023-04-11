@@ -16,18 +16,20 @@
 
 package io.gitlab.klawru.scheduler.boot;
 
-import io.gitlab.klawru.scheduler.config.SchedulerConfig;
 import io.gitlab.klawru.scheduler.config.SchedulerConfiguration;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
 
 import java.time.Duration;
 
-import static io.gitlab.klawru.scheduler.config.SchedulerConfig.*;
+import static io.gitlab.klawru.scheduler.config.SchedulerConfiguration.*;
+import static java.time.temporal.ChronoUnit.*;
 
 @Data
 @ConfigurationProperties("r2dbc-scheduler")
-public class R2dbcSchedulerProperties implements SchedulerConfiguration {
+public class R2dbcSchedulerProperties {
+
     private boolean enabled;
     /**
      * Number threads for tasks
@@ -36,14 +38,26 @@ public class R2dbcSchedulerProperties implements SchedulerConfiguration {
     /**
      * How often tasks are checked
      */
+    @DurationUnit(SECONDS)
     private Duration pollingInterval = POLLING_INTERVAL_DEFAULT;
+    /**
+     * How often is heartbeat updated for executable tasks
+     */
+    @DurationUnit(MINUTES)
+    private Duration heartbeatInterval = HEARTBEAT_INTERVAL_DEFAULT;
     /**
      * Time after which unknown tasks are deleted
      */
+    @DurationUnit(HOURS)
     private Duration unresolvedDeleteInterval = UNRESOLVED_DELETE_INTERVAL_DEFAULT;
+    /**
+     * Time after which unknown tasks will be deleted.
+     */
+    private Duration deleteUnresolvedAfter = DELETE_UNRESOLVED_AFTER_DEFAULT;
     /**
      * The maximum time given for the scheduler to complete
      */
+    @DurationUnit(SECONDS)
     private Duration shutdownMaxWait = SHUTDOWN_MAX_WAIT_DEFAULT;
     /**
      * The lower threshold of executable tasks at which new ones will be loaded. Depends on the number of threads.
@@ -54,10 +68,6 @@ public class R2dbcSchedulerProperties implements SchedulerConfiguration {
      */
     private double upperLimitFractionOfThreads = UPPER_LIMIT_FRACTION_OF_THREADS_DEFAULT;
     /**
-     * How often is heartbeat updated for executable tasks
-     */
-    private Duration heartbeatInterval = HEARTBEAT_INTERVAL_DEFAULT;
-    /**
      * The name of this scheduler instance.
      */
     private String schedulerName;
@@ -65,16 +75,11 @@ public class R2dbcSchedulerProperties implements SchedulerConfiguration {
      * The name of this scheduler table in DB.
      */
     private String tableName = TABLE_NAME_DEFAULT;
-    /**
-     * Time after which unknown tasks will be deleted.
-     */
-    private Duration deleteUnresolvedAfter = DELETE_UNRESOLVED_AFTER_DEFAULT;
 
-    SchedulerConfig.SchedulerConfigBuilder toConfig() {
-        return SchedulerConfig.builder()
+    SchedulerConfigurationBuilder toConfig() {
+        return SchedulerConfiguration.builder()
                 .threads(threads)
                 .pollingInterval(pollingInterval)
-                .unresolvedDeleteInterval(unresolvedDeleteInterval)
                 .shutdownMaxWait(shutdownMaxWait)
                 .lowerLimitFractionOfThreads(lowerLimitFractionOfThreads)
                 .upperLimitFractionOfThreads(upperLimitFractionOfThreads)

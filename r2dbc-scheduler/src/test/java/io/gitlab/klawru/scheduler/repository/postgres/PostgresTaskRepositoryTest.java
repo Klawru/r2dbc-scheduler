@@ -124,7 +124,7 @@ class PostgresTaskRepositoryTest extends AbstractPostgresTest {
         saveTask(instance1, testClock.now(), DataHolder.empty());
         saveTask(instance2, testClock.now(), DataHolder.empty());
         //When
-        taskRepository.remove(instance1, 1).block();
+        taskRepository.remove(instance1).block();
         //Then
         List<ExecutionEntity> executionEntityList = getAllTask();
         assertThat(executionEntityList)

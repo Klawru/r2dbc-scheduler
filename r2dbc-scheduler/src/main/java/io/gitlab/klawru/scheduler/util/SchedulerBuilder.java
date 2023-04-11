@@ -19,8 +19,8 @@ package io.gitlab.klawru.scheduler.util;
 import io.gitlab.klawru.scheduler.DefaultSchedulerClient;
 import io.gitlab.klawru.scheduler.SchedulerClient;
 import io.gitlab.klawru.scheduler.TaskResolver;
-import io.gitlab.klawru.scheduler.config.SchedulerConfig;
-import io.gitlab.klawru.scheduler.config.SchedulerConfig.SchedulerConfigBuilder;
+import io.gitlab.klawru.scheduler.config.SchedulerConfiguration;
+import io.gitlab.klawru.scheduler.config.SchedulerConfiguration.SchedulerConfigurationBuilder;
 import io.gitlab.klawru.scheduler.executor.DefaultTaskSchedulers;
 import io.gitlab.klawru.scheduler.executor.ExecutorService;
 import io.gitlab.klawru.scheduler.executor.TaskExecutor;
@@ -43,6 +43,7 @@ import org.springframework.r2dbc.core.DatabaseClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 @Setter
@@ -52,7 +53,7 @@ public class SchedulerBuilder {
     Clock clock;
     ConnectionFactory connectionFactory;
 
-    ArrayList<AbstractTask<?>> tasks;
+    Collection<AbstractTask<?>> tasks;
     TaskResolver taskResolver;
 
     R2dbcClient r2dbcClient;
@@ -65,7 +66,7 @@ public class SchedulerBuilder {
     DefaultTaskSchedulers taskSchedulers;
     TaskExecutor executor;
 
-    SchedulerConfigBuilder schedulerConfig;
+    SchedulerConfigurationBuilder schedulerConfig;
 
     SchedulerMetricsRegistry schedulerMetricsRegistry;
 
@@ -76,23 +77,23 @@ public class SchedulerBuilder {
         return new SchedulerBuilder()
                 .clock(clock)
                 .connectionFactory(connectionFactory)
-                .setSchedulerConfig(SchedulerConfig.builder())
+                .setSchedulerConfig(SchedulerConfiguration.builder())
                 .schedulerMetricsRegistry(new SchedulerMetricsRegistry())
                 .tasks(taskList);
     }
 
-    public SchedulerBuilder setSchedulerConfig(SchedulerConfigBuilder schedulerConfig) {
+    public SchedulerBuilder setSchedulerConfig(SchedulerConfigurationBuilder schedulerConfig) {
         this.schedulerConfig = schedulerConfig;
         return this;
     }
 
-    public SchedulerBuilder schedulerConfig(Consumer<SchedulerConfigBuilder> customization) {
+    public SchedulerBuilder schedulerConfig(Consumer<SchedulerConfigurationBuilder> customization) {
         customization.accept(this.schedulerConfig);
         return this;
     }
 
     public SchedulerClient build() {
-        SchedulerConfig config = schedulerConfig.build();
+        SchedulerConfiguration config = schedulerConfig.build();
         config.validate();
 
         if (r2dbcClient == null)

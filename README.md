@@ -1,55 +1,122 @@
 # r2dbc-scheduler
 
 This is a reactive task scheduler inspired by the [db-scheduler](https://github.com/kagkarlsson/db-scheduler) project.
-Tasks are stored in persistent storage using R2DBC and Spring.
+Tasks are stored in persistent storage using R2DBC and Spring DatabaseClient.
 
-### Installing
+## Installing
 
-* Soon
+### Maven configuration
 
-### Usage
+Artifacts can be found in [Maven Central](https://search.maven.org/search?q=r2dbc-scheduler-spring-boot-starter):
+```xml
 
-* Create the necessary tasks
-
-```java
-OneTimeTask<String> task = new OneTimeTaskBuilder<>("taskName",String.class)
-        .execute((taskInstance, context) -> Mono.fromRunnable(() -> {
-            String data = taskInstance.getData();
-            log.info(data);
-        }));
+<dependency>
+    <groupId>io.gitlab.klawru</groupId>
+    <artifactId>r2dbc-scheduler-spring-boot-starter</artifactId>
+    <version>${version}</version>
+</dependency>
 ```
 
-* Create a task scheduler, and register task
+### Usage with Spring
 
-```java
-SchedulerClient client = SchedulerBuilder.create(connectionFactory, task, everyHourTask)
-        .schedulerConfig(schedulerConfigBuilder -> schedulerConfigBuilder
-            .schedulerName("name")
-            .threads(2)
-        )
-        .build();
+1) Add maven dependency
+```xml
+
+<dependency>
+    <groupId>io.gitlab.klawru</groupId>
+    <artifactId>r2dbc-scheduler-spring-boot-starter</artifactId>
+    <version>${version}</version>
+</dependency>
 ```
 
-* Start the task scheduler
+2) create table ``scheduled_job``. See table definition
+   for [postgresql](r2dbc-scheduler/src/main/resources/postgres_table.sql)
+
+3) Create bean with task
+
+```java
+
+@Configuration
+public class TaskConfig {
+
+    @Bean
+    RecurringTask<Void> updateObjects(Service service, OneTimeTask<UUID> updateObject) {
+        return Tasks.recurring("updateObjects",
+                        new CronScheduler("0 0 1 * * *", ZoneId.of("UTC")))
+                .execute(((taskInstance, executionContext) -> service.scheduleUpdateAll(executionContext, updateObject)));
+    }
+
+    @Bean
+    OneTimeTask<UUID> updateObject(Service service) {
+        return Tasks.oneTime("updateObject", UUID.class)
+                .execute(service::updateById);
+    }
+
+}
+```
+
+### Manual usage
+
+1) Add a dependency to the project
+
+```xml
+
+<dependency>
+    <groupId>io.gitlab.klawru</groupId>
+    <artifactId>r2dbc-scheduler</artifactId>
+    <version>${version}</version>
+</dependency>
+```
+
+2) create table ``scheduled_job``. See table definition
+   for [postgresql](r2dbc-scheduler/src/main/resources/postgres_table.sql)
+
+3) Create the necessary tasks
+
+```java
+class Tasks {
+    OneTimeTask<String> task = new OneTimeTaskBuilder<>("taskName", String.class)
+            .execute((taskInstance, context) -> Mono.fromRunnable(() -> {
+                String data = taskInstance.getData();
+                log.info(data);
+            }));
+}
+```
+
+4) Create a task scheduler, and register task
+
+```java
+class Scheduler {
+    SchedulerClient client = SchedulerBuilder.create(connectionFactory, task, everyHourTask)
+            .schedulerConfig(schedulerConfigBuilder -> schedulerConfigBuilder
+                    .schedulerName("name")
+                    .threads(2)
+            )
+            .build();
+}
+```
+
+5) Start the task scheduler
 
 ```java
 client.start();
 ```
 
-* And then you can schedule the task via the SchedulerClient
+6) And then you can schedule the task via the SchedulerClient
+
 ```java
 scheduler.schedule(taskA.instance("1"));
 ```
 
 ## Authors
 
-Contributors names and contact info
+Contributor names and contact info
 
 * Klawru@gmail.com Amir
 
 ## Version History
 
-* 0.1
+* 0.1.0
     * Initial Release
 
 ## License

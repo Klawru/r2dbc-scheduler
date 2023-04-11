@@ -65,7 +65,8 @@ public abstract class AbstractPostgresTest {
     void setUpPool(TestInfo testInfo) {
         metricsRegistry = new SchedulerMetricsRegistry();
         pool = createConnectionFactory();
-        SqlScriptUtil.executeScriptFile("db.sql", pool);
+        SqlScriptUtil.executeScriptFile("postgres_table.sql", pool);
+        SqlScriptUtil.executeScript("TRUNCATE TABLE scheduled_job;", pool);
         log.info("Starting test: " + testInfo.getDisplayName());
     }
 

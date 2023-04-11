@@ -1,6 +1,5 @@
 /*
- * Copyright 2023 Klawru
- * Copyright (C) Gustav Karlsson
+ * Copyright © Klawru
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gitlab.klawru.scheduler.task;
+
+package io.gitlab.klawru.scheduler.boot;
 
 import io.gitlab.klawru.scheduler.SchedulerClient;
-import io.gitlab.klawru.scheduler.executor.Execution;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 
+class SchedulerContextReadyStarter implements SchedulerStarter {
 
-public interface ExecutionContext<T> {
-    SchedulerClient getSchedulerClient();
+    SchedulerClient schedulerClient;
 
-    Execution<T> getExecution();
+    public SchedulerContextReadyStarter(SchedulerClient schedulerClient) {
+        this.schedulerClient = schedulerClient;
+    }
+
+    @Override
+    @EventListener(ContextRefreshedEvent.class)
+    public void start() {
+        schedulerClient.start();
+    }
 }

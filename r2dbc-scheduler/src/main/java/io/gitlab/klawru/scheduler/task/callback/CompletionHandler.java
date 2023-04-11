@@ -16,8 +16,8 @@
  */
 package io.gitlab.klawru.scheduler.task.callback;
 
-import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.ExecutionOperations;
+import io.gitlab.klawru.scheduler.executor.Execution;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;

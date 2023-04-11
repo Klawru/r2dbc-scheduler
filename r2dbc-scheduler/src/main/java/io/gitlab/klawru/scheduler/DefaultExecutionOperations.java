@@ -15,8 +15,8 @@
  */
 package io.gitlab.klawru.scheduler;
 
-import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.exception.ExecutionException;
+import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
 import io.gitlab.klawru.scheduler.repository.R2dbcTaskService;
 import io.gitlab.klawru.scheduler.repository.TaskService;
@@ -41,7 +41,7 @@ public class DefaultExecutionOperations implements ExecutionOperations {
 
     @Override
     public Mono<Void> remove(Execution<?> completed) {
-        return taskRepository.remove(completed)
+        return taskRepository.remove(completed.getTaskInstance())
                 .doFinally(signalType -> callback.run());
     }
 

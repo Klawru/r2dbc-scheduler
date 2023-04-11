@@ -18,8 +18,8 @@ package io.gitlab.klawru.scheduler.repository;
 
 import io.gitlab.klawru.scheduler.TaskResolver;
 import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.task.instance.NextExecutionTime;
 import io.gitlab.klawru.scheduler.task.callback.ScheduleOnStartup;
+import io.gitlab.klawru.scheduler.task.instance.NextExecutionTime;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
 import io.gitlab.klawru.scheduler.util.DataHolder;
@@ -41,7 +41,7 @@ public interface TaskService extends Closeable {
 
     Flux<Execution<?>> lockAndGetDue(int limit);
 
-    Mono<Void> remove(Execution<?> execution);
+    Mono<Void> remove(TaskInstanceId execution);
 
     Mono<Boolean> updateHeartbeat(Execution<?> execution);
 

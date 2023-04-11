@@ -24,6 +24,7 @@ import io.gitlab.klawru.scheduler.service.DeadExecutionDetectService;
 import io.gitlab.klawru.scheduler.service.DeleteUnresolvedTaskService;
 import io.gitlab.klawru.scheduler.service.TaskFetchService;
 import io.gitlab.klawru.scheduler.service.UpdateHeartbeatService;
+import io.gitlab.klawru.scheduler.stats.SchedulerClientStatus;
 import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
@@ -45,6 +46,7 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     private final TaskSchedulers schedulers;
     private final SchedulerConfiguration config;
     private final Clock clock;
+    private SchedulerClientStatus status = SchedulerClientStatus.PAUSED;
 
     @Getter
     private final SchedulerMetricsRegistry schedulerMetricsRegistry;
@@ -109,12 +111,15 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     }
 
     @Override
-    public <T> Mono<Void> cancel(Execution<T> execution) {
+    public Mono<Void> cancel(TaskInstanceId execution) {
         return taskService.remove(execution);
     }
 
     public void start() {
         log.info("Starting scheduler '{}'", config.getSchedulerName());
+        if (status == SchedulerClientStatus.STOPPED)
+            throw new IllegalStateException("Unable to start a stopped Scheduler");
+        status = SchedulerClientStatus.RUNNING;
         startTask();
         taskFetchService.start();
         updateHeartbeatService.start();
@@ -133,6 +138,7 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     @Override
     public void pause() {
         log.info("Stop scheduler '{}'", config.getSchedulerName());
+        status = SchedulerClientStatus.PAUSED;
         taskFetchService.pause();
         updateHeartbeatService.pause();
         deadExecutionDetectService.pause();
@@ -181,6 +187,11 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     }
 
     @Override
+    public SchedulerClientStatus getCurrentStatus() {
+        return status;
+    }
+
+    @Override
     public SchedulerConfiguration getConfig() {
         return config;
     }
@@ -188,6 +199,7 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     @Override
     public void close() {
         pause();
+        status = SchedulerClientStatus.STOPPED;
         executor.stop(config.getShutdownMaxWait());
         try {
             taskService.close();
