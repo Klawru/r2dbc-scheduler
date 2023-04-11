@@ -50,7 +50,7 @@ class ClusterTest extends AbstractPostgresTest {
 
     @BeforeEach
     void setUp() {
-        executeScriptFile("db.sql");
+        executeScriptFile("postgres_table.sql");
         onetimeTaskHandlerA = new TestTasks.CountingHandler<>();
 
         stateCount = new ConcurrentHashMap<>();
@@ -90,7 +90,7 @@ class ClusterTest extends AbstractPostgresTest {
         schedulerA.getClient().fetchTask();
         schedulerB.getClient().fetchTask();
         //Then
-        await().atMost(10, SECONDS).until(() -> metricsRegistry.getAllTask() == taskSize);
+        await().atMost(10, SECONDS).until(() -> metricsRegistry.getCountExecutedTask() == taskSize);
         assertThat(stateCount.get(ExecutionStateName.COMPLETE)).hasValue(taskSize);
         assertThat(stateCount.keySet()).containsExactly(ExecutionStateName.COMPLETE);
     }

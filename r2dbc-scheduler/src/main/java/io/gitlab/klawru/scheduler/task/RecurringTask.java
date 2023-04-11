@@ -20,11 +20,11 @@ import io.gitlab.klawru.scheduler.SchedulerClient;
 import io.gitlab.klawru.scheduler.task.callback.CompletionHandler;
 import io.gitlab.klawru.scheduler.task.callback.DeadExecutionHandler;
 import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
+import io.gitlab.klawru.scheduler.task.callback.ScheduleOnStartup;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.task.schedule.ScheduleRecurringOnStartUp;
 import io.gitlab.klawru.scheduler.task.schedule.Scheduler;
 import io.gitlab.klawru.scheduler.util.Clock;
-import io.gitlab.klawru.scheduler.task.callback.ScheduleOnStartup;
 import lombok.Getter;
 import reactor.core.publisher.Mono;
 

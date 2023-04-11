@@ -17,12 +17,12 @@
 package io.gitlab.klawru.scheduler.service;
 
 import io.gitlab.klawru.scheduler.AbstractPostgresTest;
-import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import io.gitlab.klawru.scheduler.SchedulerClient;
 import io.gitlab.klawru.scheduler.TaskResolver;
 import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
 import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
 import io.gitlab.klawru.scheduler.repository.postgres.PostgresTaskRepository;
+import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import io.gitlab.klawru.scheduler.task.OneTimeTask;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.util.DataHolder;
@@ -30,9 +30,11 @@ import io.gitlab.klawru.scheduler.util.SchedulerBuilder;
 import io.gitlab.klawru.scheduler.util.Tasks;
 import io.gitlab.klawru.scheduler.util.TestTasks;
 import io.r2dbc.spi.ConnectionFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import org.mockito.Mockito;
 import org.springframework.r2dbc.core.DatabaseClient;
 
@@ -40,10 +42,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.list;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.timeout;
 
 class DeleteUnresolvedTaskServiceTest extends AbstractPostgresTest {
@@ -75,8 +78,10 @@ class DeleteUnresolvedTaskServiceTest extends AbstractPostgresTest {
                 .taskRepository(repository)
                 .schedulerConfig(configBuilder -> configBuilder
                         .schedulerName("test-scheduler")
-                        .deleteUnresolvedAfter(deleteUnresolvedAfter))
+                        .deleteUnresolvedAfter(deleteUnresolvedAfter)
+                        .pollingInterval(Duration.ofSeconds(1)))
                 .build();
+
     }
 
     @AfterEach
@@ -84,31 +89,36 @@ class DeleteUnresolvedTaskServiceTest extends AbstractPostgresTest {
         Optional.ofNullable(client).ifPresent(SchedulerClient::close);
     }
 
-    @Test
-    void name() {
+    @RepeatedTest(4)
+    void removeOldUnresolvedTask() {
         TaskInstance<Void> taskUnresolvedA1 = taskUnresolved.instance("unresolved");
         Instant deleteUnresolvedTime = testClock.now().minus(deleteUnresolvedAfter.plusSeconds(10));
         //save task to DB
         repository.createIfNotExists(taskUnresolvedA1, deleteUnresolvedTime, DataHolder.empty()).block();
-        //lock a task by another scheduler
-        var all = repository.getAll().collectList().blockOptional();
-        assertThat(all).get(list(ExecutionEntity.class))
+        //check a task in table
+        var all = repository.getAll().collectList().block();
+        assertThat(all)
                 .hasSize(1)
                 .first()
                 .returns(taskUnresolvedA1.getTaskName(), ExecutionEntity::getTaskName)
                 .returns(taskUnresolvedA1.getId(), ExecutionEntity::getId);
-        //When
+        Mockito.clearInvocations(taskResolver);
+        //Start the client for found 'taskUnresolved'
         client.start();
         Mockito.verify(taskResolver, timeout(Duration.ofSeconds(10).toMillis()))
-                .findTask(anyString());
+                .findTask("taskUnresolved");
         client.pause();
+        //When
+        //Start DeleteUnresolvedTaskService
         client.start();
         //Then
         Mockito.verify(repository, timeout(Duration.ofSeconds(10).toMillis()).atLeast(1))
                 .removeOldUnresolvedTask(anyCollection(), any(Instant.class));
-        all = repository.getAll().collectList().blockOptional();
-        assertThat(all)
-                .get(list(ExecutionEntity.class))
-                .isEmpty();
+        Awaitility.await("Delete from table").atMost(10, TimeUnit.SECONDS)
+                .until(() -> repository.getAll().count()
+                        .map(executionEntities -> executionEntities == 0)
+                        .blockOptional().orElse(false));
+        all = repository.getAll().collectList().block();
+        assertThat(all).isEmpty();
     }
 }

@@ -17,8 +17,8 @@
 package io.gitlab.klawru.scheduler.repository;
 
 import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.task.AbstractTask;
 import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
+import io.gitlab.klawru.scheduler.task.AbstractTask;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import org.jetbrains.annotations.NotNull;
 

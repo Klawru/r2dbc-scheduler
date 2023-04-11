@@ -6,7 +6,7 @@
 
     <groupId>io.gitlab.klawru</groupId>
     <artifactId>parent-r2dbc-scheduler</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>parent-r2dbc-scheduler</name>
@@ -199,6 +199,14 @@
                             <serverId>ossrh</serverId>
                             <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <!-- Отключаем плагин -->
+                            <skip>true</skip>
                         </configuration>
                     </plugin>
                     <plugin>

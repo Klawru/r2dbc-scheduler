@@ -18,7 +18,7 @@ package io.gitlab.klawru.scheduler.executor;
 
 import io.gitlab.klawru.scheduler.ExecutionOperations;
 import io.gitlab.klawru.scheduler.SchedulerClient;
-import io.gitlab.klawru.scheduler.config.SchedulerConfig;
+import io.gitlab.klawru.scheduler.config.SchedulerConfiguration;
 import io.gitlab.klawru.scheduler.executor.execution.state.PickedState;
 import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
 import io.gitlab.klawru.scheduler.repository.ExecutionMapper;
@@ -64,7 +64,7 @@ class ExecutorServiceTest {
     void setUp() {
         waitingHandler = new WaitingHandler();
         waitingTask = TestTasks.oneTime("waitingTask", waitingHandler);
-        taskSchedulers = new DefaultTaskSchedulers(SchedulerConfig.builder()
+        taskSchedulers = new DefaultTaskSchedulers(SchedulerConfiguration.builder()
                 .threads(1)
                 .build());
         metricsRegistry = new SchedulerMetricsRegistry();

@@ -16,12 +16,12 @@
  */
 package io.gitlab.klawru.scheduler.util;
 
-import io.gitlab.klawru.scheduler.task.callback.CompletionHandler;
-import io.gitlab.klawru.scheduler.task.schedule.Scheduler;
 import io.gitlab.klawru.scheduler.task.ExecutionHandler;
 import io.gitlab.klawru.scheduler.task.RecurringTask;
+import io.gitlab.klawru.scheduler.task.callback.CompletionHandler;
 import io.gitlab.klawru.scheduler.task.callback.DeadExecutionHandler;
 import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
+import io.gitlab.klawru.scheduler.task.schedule.Scheduler;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;

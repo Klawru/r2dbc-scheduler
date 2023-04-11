@@ -1,6 +1,5 @@
 /*
- * Copyright 2023 Klawru
- * Copyright (C) Gustav Karlsson
+ * Copyright © Klawru
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gitlab.klawru.scheduler.task;
 
-import io.gitlab.klawru.scheduler.SchedulerClient;
-import io.gitlab.klawru.scheduler.executor.Execution;
+package io.gitlab.klawru.scheduler.boot;
 
+import io.gitlab.klawru.scheduler.util.SchedulerBuilder;
 
-public interface ExecutionContext<T> {
-    SchedulerClient getSchedulerClient();
+public interface SchedulerBuilderCustomizer {
 
-    Execution<T> getExecution();
+    void customize(SchedulerBuilder schedulerConfig);
 }

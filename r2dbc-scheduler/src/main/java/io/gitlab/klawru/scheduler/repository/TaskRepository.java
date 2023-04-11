@@ -29,7 +29,7 @@ public interface TaskRepository {
 
     Flux<ExecutionEntity> lockAndGetDue(String schedulerName, Instant now, int limit, Collection<String> unresolvedTaskNames);
 
-    Mono<Void> remove(TaskInstanceId taskInstanceId, long version);
+    Mono<Void> remove(TaskInstanceId taskInstanceId);
 
     Mono<Integer> updateHeartbeat(TaskInstanceId taskInstanceId, long version, Instant now);
 

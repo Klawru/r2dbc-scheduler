@@ -54,6 +54,12 @@ import java.util.stream.Stream;
 @Slf4j
 public class R2dbcTaskService implements TaskService, Closeable {
     private final TaskRepository repository;
+    @Getter
+    private final TaskResolver taskResolver;
+    private final ExecutionMapper executionMapper;
+    private final String schedulerName;
+    private final Clock clock;
+    private final Serializer serializer;
 
     public R2dbcTaskService(TaskRepository repository, TaskResolver taskResolver, ExecutionMapper executionMapper,
                             String schedulerName, Clock clock, Serializer serializer) {
@@ -64,13 +70,6 @@ public class R2dbcTaskService implements TaskService, Closeable {
         this.clock = clock;
         this.serializer = serializer;
     }
-
-    @Getter
-    private final TaskResolver taskResolver;
-    private final ExecutionMapper executionMapper;
-    private final String schedulerName;
-    private final Clock clock;
-    private final Serializer serializer;
 
     @Override
     public <T> Mono<Void> createIfNotExists(TaskInstanceId execution, NextExecutionTime nextExecutionTime, DataHolder<T> dataHolder) {
@@ -84,7 +83,10 @@ public class R2dbcTaskService implements TaskService, Closeable {
         if (limit <= 0)
             return Flux.empty();
         return repository.lockAndGetDue(schedulerName, clock.now(), limit, taskResolver.getUnresolvedName())
-                .map(this::findTaskForPick)
+                .map(executionEntity -> {
+                    Optional<Execution<?>> execution = findTaskForPick(executionEntity);
+                    return execution;
+                })
                 .filter(Optional::isPresent)
                 .map(Optional::get);
     }
@@ -98,8 +100,8 @@ public class R2dbcTaskService implements TaskService, Closeable {
     }
 
     @Override
-    public Mono<Void> remove(Execution<?> execution) {
-        return repository.remove(execution.getTaskInstance(), execution.getVersion());
+    public Mono<Void> remove(TaskInstanceId  taskInstanceId) {
+        return repository.remove(taskInstanceId);
     }
 
     @Override

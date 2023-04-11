@@ -13,5 +13,3 @@ CREATE TABLE IF NOT EXISTS scheduled_job
     version              BIGINT,
     PRIMARY KEY (task_name, task_instance)
 );
-
-TRUNCATE TABLE scheduled_job;

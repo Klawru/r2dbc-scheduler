@@ -16,11 +16,11 @@
  */
 package io.gitlab.klawru.scheduler.util;
 
-import io.gitlab.klawru.scheduler.task.callback.CompletionHandler;
-import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
 import io.gitlab.klawru.scheduler.task.ExecutionHandler;
 import io.gitlab.klawru.scheduler.task.OneTimeTask;
+import io.gitlab.klawru.scheduler.task.callback.CompletionHandler;
 import io.gitlab.klawru.scheduler.task.callback.DeadExecutionHandler;
+import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
 
 public class OneTimeTaskBuilder<T> {
     private final String name;

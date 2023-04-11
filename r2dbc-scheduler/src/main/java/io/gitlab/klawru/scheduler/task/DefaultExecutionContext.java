@@ -16,8 +16,8 @@
  */
 package io.gitlab.klawru.scheduler.task;
 
-import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.SchedulerClient;
+import io.gitlab.klawru.scheduler.executor.Execution;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(staticName = "of")

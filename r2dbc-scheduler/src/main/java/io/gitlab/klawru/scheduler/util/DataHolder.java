@@ -23,6 +23,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * A container object that allows you to store a value, including null, or know that it was not passed.
+ *
+ * @param <T> the type of value
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DataHolder<T> {
     private static final DataHolder<?> EMPTY_DATA = new DataHolder<>(null);
@@ -50,6 +55,11 @@ public class DataHolder<T> {
         return data.get();
     }
 
+    /**
+     * If a value is not present, returns true, otherwise false.
+     *
+     * @return true if a value is present, otherwise false
+     */
     public boolean isEmpty() {
         return data == null;
     }

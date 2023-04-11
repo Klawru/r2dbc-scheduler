@@ -17,10 +17,10 @@
 package io.gitlab.klawru.scheduler.repository.postgres;
 
 import io.gitlab.klawru.scheduler.exception.RepositoryException;
+import io.gitlab.klawru.scheduler.r2dbc.PreparedStatementSetter;
 import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
 import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
 import io.gitlab.klawru.scheduler.repository.TaskRepository;
-import io.gitlab.klawru.scheduler.r2dbc.PreparedStatementSetter;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
 import io.gitlab.klawru.scheduler.util.DataHolder;
 import io.r2dbc.postgresql.codec.Json;
@@ -112,15 +112,13 @@ public class PostgresTaskRepository implements TaskRepository {
         );
     }
 
-    public Mono<Void> remove(TaskInstanceId taskInstanceId, long version) {
+    public Mono<Void> remove(TaskInstanceId taskInstanceId) {
         return r2dbcClient.execute("DELETE FROM " + tableName + " " +
                         "WHERE task_name = :taskName " +
-                        "AND task_instance = :taskInstance " +
-                        "AND version = :version",
+                        "AND task_instance = :taskInstance ",
                 bindTarget -> bindTarget
                         .bind("taskName", taskInstanceId.getTaskName())
                         .bind("taskInstance", taskInstanceId.getId())
-                        .bind("version", version)
         ).map(removed -> {
             if (removed != 1) {
                 throw new RepositoryException("Expected one execution to be removed, but removed " + removed + ". Indicates a bug.", taskInstanceId);
