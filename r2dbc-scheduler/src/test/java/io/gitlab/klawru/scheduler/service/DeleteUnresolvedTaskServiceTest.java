@@ -102,7 +102,6 @@ class DeleteUnresolvedTaskServiceTest extends AbstractPostgresTest {
                 .first()
                 .returns(taskUnresolvedA1.getTaskName(), ExecutionEntity::getTaskName)
                 .returns(taskUnresolvedA1.getId(), ExecutionEntity::getId);
-        Mockito.clearInvocations(taskResolver);
         //Start the client for found 'taskUnresolved'
         client.start();
         Mockito.verify(taskResolver, timeout(Duration.ofSeconds(10).toMillis()))
