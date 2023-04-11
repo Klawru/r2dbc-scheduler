@@ -83,10 +83,7 @@ public class R2dbcTaskService implements TaskService, Closeable {
         if (limit <= 0)
             return Flux.empty();
         return repository.lockAndGetDue(schedulerName, clock.now(), limit, taskResolver.getUnresolvedName())
-                .map(executionEntity -> {
-                    Optional<Execution<?>> execution = findTaskForPick(executionEntity);
-                    return execution;
-                })
+                .map(this::findTaskForPick)
                 .filter(Optional::isPresent)
                 .map(Optional::get);
     }
