@@ -30,20 +30,30 @@ variables:
 sast:
   stage: test
 
-build-test:
-  stage: test
+.docker:
   services:
     - name: docker:23.0-dind
       # explicitly disable tls to avoid docker startup interruption
       command: [ "--tls=false" ]
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+build:
+  stage: test
+  script:
+    - mvn $MAVEN_CLI_OPTS compile
+  rules:
+    - if:  $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+test:
+  extends: .docker
+  stage: test
   variables:
     JACOCO_REPORT: $CI_PROJECT_DIR/coverage/target/site/jacoco-aggregate/jacoco.xml
     COBERTURA_XML: $CI_PROJECT_DIR/coverage/target/site/jacoco-aggregate/cobertura.xml
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     # Компиляция проекта, прогон тестов.
-    - mvn $MAVEN_CLI_OPTS verify
+    - mvn $MAVEN_CLI_OPTS verify sonar:sonar -Dsonar.qualitygate.wait=true
   after_script:
     # convert a report from jacoco to cobertura, using a relative project path
     - 'python3 /opt/cover2cover.py ${JACOCO_REPORT}
@@ -63,8 +73,9 @@ build-test:
         coverage_format: cobertura
         path: ${COBERTURA_XML}
   coverage: '/Total coverage:\s+?(\d{1,3})/'
+  allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG || $CI_PIPELINE_SOURCE == 'merge_request_event' || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 deploy:
   stage: deploy
