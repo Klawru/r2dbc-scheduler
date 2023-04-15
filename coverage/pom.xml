@@ -16,6 +16,7 @@
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
+        <sonar.skip>true</sonar.skip>
         <code.coverage.project.folder>${project.parent.basedir}/</code.coverage.project.folder>
         <code.coverage.overall.data.folder>${project.parent.basedir}/target/aggregate.exec</code.coverage.overall.data.folder>
     </properties>
