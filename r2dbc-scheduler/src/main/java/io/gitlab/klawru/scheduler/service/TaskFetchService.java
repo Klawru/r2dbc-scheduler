@@ -86,8 +86,9 @@ public class TaskFetchService implements StartPauseService {
     }
 
     protected void getTriggerFetchCallback() {
-        if (executor.getNumberInQueueOrProcessing() <= executor.taskLowerLimit())
+        if (executor.getNumberInQueueOrProcessing() <= executor.taskLowerLimit()) {
             fetchTask();
+        }
     }
 
     public void fetchTask() {
@@ -103,7 +104,8 @@ public class TaskFetchService implements StartPauseService {
     }
 
     public void start() {
-        if (taskFetchStream == null)
+        if (taskFetchStream == null) {
             startTaskFetch();
+        }
     }
 }

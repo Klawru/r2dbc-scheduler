@@ -30,7 +30,6 @@ import io.gitlab.klawru.scheduler.util.SchedulerBuilder;
 import io.gitlab.klawru.scheduler.util.Tasks;
 import io.gitlab.klawru.scheduler.util.TestTasks;
 import io.r2dbc.spi.ConnectionFactory;
-import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

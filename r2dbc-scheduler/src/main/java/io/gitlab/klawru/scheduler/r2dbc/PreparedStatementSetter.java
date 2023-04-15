@@ -52,10 +52,11 @@ public interface PreparedStatementSetter {
 
         @Override
         public <T> BindTarget bind(String identifier, T value, Class<T> type) {
-            if (value != null)
+            if (value != null) {
                 bind(identifier, value);
-            else
+            } else {
                 bindNull(identifier, type);
+            }
             return this;
         }
 
@@ -67,10 +68,11 @@ public interface PreparedStatementSetter {
 
         @Override
         public <T> BindTarget bind(int index, T value, Class<T> type) {
-            if (value != null)
+            if (value != null) {
                 bind(index, value);
-            else
+            } else {
                 bind(index, type);
+            }
             return this;
         }
 
@@ -106,10 +108,11 @@ public interface PreparedStatementSetter {
 
         @Override
         public <T> BindTarget bind(String identifier, T value, Class<T> type) {
-            if (value != null)
+            if (value != null) {
                 bind(identifier, value);
-            else
+            } else {
                 bindNull(identifier, type);
+            }
             return this;
         }
 
@@ -121,10 +124,11 @@ public interface PreparedStatementSetter {
 
         @Override
         public <T> BindTarget bind(int index, T value, Class<T> type) {
-            if (value != null)
+            if (value != null) {
                 bind(index, value);
-            else
+            } else {
                 bindNull(index, type);
+            }
             return this;
         }
 

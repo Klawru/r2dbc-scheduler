@@ -43,15 +43,17 @@ public class DataHolder<T> {
     }
 
     public <R> DataHolder<R> map(Function<T, R> mapper) {
-        if (isEmpty())
+        if (isEmpty()) {
             return empty();
+        }
         return new DataHolder<>(MapperUtil.memoize(() -> mapper.apply(data.get())));
     }
 
     @Nullable
     public T getData() {
-        if (isEmpty())
+        if (isEmpty()) {
             throw new DataHolderException("No data present");
+        }
         return data.get();
     }
 

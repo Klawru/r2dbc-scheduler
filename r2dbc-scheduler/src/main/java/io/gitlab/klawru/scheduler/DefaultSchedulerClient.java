@@ -46,15 +46,13 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     private final TaskSchedulers schedulers;
     private final SchedulerConfiguration config;
     private final Clock clock;
-    private SchedulerClientStatus status = SchedulerClientStatus.PAUSED;
-
     @Getter
     private final SchedulerMetricsRegistry schedulerMetricsRegistry;
-
     private final TaskFetchService taskFetchService;
     private final UpdateHeartbeatService updateHeartbeatService;
     private final DeadExecutionDetectService deadExecutionDetectService;
     private final DeleteUnresolvedTaskService deleteUnresolvedTaskService;
+    private SchedulerClientStatus status = SchedulerClientStatus.PAUSED;
 
     public DefaultSchedulerClient(TaskService taskService, TaskExecutor executor, TaskSchedulers schedulers, SchedulerMetricsRegistry schedulerMetricsRegistry, SchedulerConfiguration config, Clock clock) {
         this.taskService = taskService;
@@ -117,8 +115,9 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
 
     public void start() {
         log.info("Starting scheduler '{}'", config.getSchedulerName());
-        if (status == SchedulerClientStatus.STOPPED)
+        if (status == SchedulerClientStatus.STOPPED) {
             throw new IllegalStateException("Unable to start a stopped Scheduler");
+        }
         status = SchedulerClientStatus.RUNNING;
         startTask();
         taskFetchService.start();

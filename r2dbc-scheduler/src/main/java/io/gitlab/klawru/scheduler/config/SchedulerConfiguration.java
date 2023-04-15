@@ -36,14 +36,6 @@ public class SchedulerConfiguration {
     public static final Duration HEARTBEAT_INTERVAL_DEFAULT = Duration.ofMinutes(5);
     public static final String TABLE_NAME_DEFAULT = "scheduled_job";
     public static final Duration DELETE_UNRESOLVED_AFTER_DEFAULT = Duration.ofDays(14);
-
-    /**
-     * Builder class
-     */
-    public static class SchedulerConfigurationBuilder {
-    }
-
-
     /**
      * Number threads for tasks
      */
@@ -89,7 +81,6 @@ public class SchedulerConfiguration {
     @Builder.Default
     String tableName = TABLE_NAME_DEFAULT;
 
-
     public void validate() {
         Objects.requireNonNull(pollingInterval, "pollingInterval must not be null");
         Objects.requireNonNull(heartbeatInterval, "heartbeatInterval must not be null");
@@ -97,5 +88,11 @@ public class SchedulerConfiguration {
         Objects.requireNonNull(deleteUnresolvedAfter, "deleteUnresolvedAfter must not be null");
         Objects.requireNonNull(schedulerName, "schedulerName must not be null");
         Objects.requireNonNull(tableName, "tableName must not be null");
+    }
+
+    /**
+     * Builder class for javadoc
+     */
+    public static class SchedulerConfigurationBuilder {
     }
 }

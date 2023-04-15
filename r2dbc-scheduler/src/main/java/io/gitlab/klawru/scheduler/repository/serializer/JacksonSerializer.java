@@ -53,8 +53,9 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public byte @Nullable [] serialize(Object data) {
-        if (data == null)
+        if (data == null) {
             return null;
+        }
         try {
             return objectMapper.writeValueAsBytes(data);
         } catch (JsonProcessingException e) {
@@ -64,8 +65,9 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public <T> T deserialize(Class<T> clazz, byte[] serializedData) {
-        if (serializedData == null)
+        if (serializedData == null) {
             return null;
+        }
         try {
             return objectMapper.readValue(serializedData, clazz);
         } catch (IOException e) {

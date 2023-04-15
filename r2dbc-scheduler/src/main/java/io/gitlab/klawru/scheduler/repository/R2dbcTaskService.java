@@ -80,8 +80,9 @@ public class R2dbcTaskService implements TaskService, Closeable {
 
     @Override
     public Flux<Execution<?>> lockAndGetDue(int limit) {
-        if (limit <= 0)
+        if (limit <= 0) {
             return Flux.empty();
+        }
         return repository.lockAndGetDue(schedulerName, clock.now(), limit, taskResolver.getUnresolvedName())
                 .map(this::findTaskForPick)
                 .filter(Optional::isPresent)
@@ -91,13 +92,14 @@ public class R2dbcTaskService implements TaskService, Closeable {
     @NotNull
     private <T> Execution<T> mapForPick(ExecutionEntity executionEntity, AbstractTask<T> task) {
         Supplier<T> dataSupplier = MapperUtil.memoize(() -> serializer.deserialize(task.getDataClass(), executionEntity.getData()));
-        if (executionEntity.isPicked() && !schedulerName.equals(executionEntity.getPickedBy()))
+        if (executionEntity.isPicked() && !schedulerName.equals(executionEntity.getPickedBy())) {
             throw new TaskServiceException("The task is not accepted by the current scheduler");
+        }
         return executionMapper.mapToExecution(executionEntity, new PickedState(), task, dataSupplier);
     }
 
     @Override
-    public Mono<Void> remove(TaskInstanceId  taskInstanceId) {
+    public Mono<Void> remove(TaskInstanceId taskInstanceId) {
         return repository.remove(taskInstanceId);
     }
 
@@ -105,8 +107,9 @@ public class R2dbcTaskService implements TaskService, Closeable {
     public Mono<Boolean> updateHeartbeat(Execution<?> execution) {
         return repository.updateHeartbeat(execution.getTaskInstance(), execution.getVersion(), clock.now())
                 .flatMap(updated -> {
-                    if (updated != 1)
+                    if (updated != 1) {
                         log.warn("Did not update heartbeat or multiple row updated on '{}' updatedRow={}", execution.getTaskInstance().getTaskNameId(), updated);
+                    }
                     return Mono.just(updated > 0);
                 });
     }
@@ -123,9 +126,9 @@ public class R2dbcTaskService implements TaskService, Closeable {
                 .as(MapperUtil::get)
                 .flatMap(execution -> {
                     Class<?> dataClass = execution.getTaskInstance().getTask().getDataClass();
-                    if (newData.isEmpty() || newData.getData() == null || dataClass.isAssignableFrom(newData.getData().getClass()))
+                    if (newData.isEmpty() || newData.getData() == null || dataClass.isAssignableFrom(newData.getData().getClass())) {
                         return reschedule((Execution<T>) execution, nextExecutionTime, newData);
-                    else {
+                    } else {
                         log.warn("Error on reschedule task '{}': type mismatch", taskInstanceId.getTaskNameId());
                         return Mono.error(new TaskServiceException("Error on reschedule task '" + taskInstanceId.getTaskName() + "': type mismatch"));
                     }
@@ -178,8 +181,9 @@ public class R2dbcTaskService implements TaskService, Closeable {
     @Override
     public Mono<Integer> deleteUnresolvedTask(Duration deleteUnresolvedAfter) {
         Collection<String> unresolvedName = taskResolver.getUnresolvedName();
-        if (unresolvedName.isEmpty())
+        if (unresolvedName.isEmpty()) {
             return Mono.empty();
+        }
         return repository.removeOldUnresolvedTask(unresolvedName, clock.now().minus(deleteUnresolvedAfter));
     }
 

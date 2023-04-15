@@ -31,6 +31,7 @@ public interface SchedulerClient extends StartPauseService, AutoCloseable {
      * Schedule a new task
      *
      * @param taskInstance task-instance
+     * @param <T>          type of task-data
      * @return Mono
      */
     <T> Mono<Void> schedule(TaskInstance<T> taskInstance);

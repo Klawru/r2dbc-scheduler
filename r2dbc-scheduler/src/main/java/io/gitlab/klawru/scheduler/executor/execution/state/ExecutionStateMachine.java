@@ -31,8 +31,9 @@ public class ExecutionStateMachine {
 
     public <T extends ExecutionState> T changeState(T next) {
         ExecutionState current = currentState();
-        if (!canTransition(current, next))
+        if (!canTransition(current, next)) {
             throw new IllegalStateChangeException(current, next);
+        }
         states.add(next);
         return next;
     }
@@ -52,8 +53,9 @@ public class ExecutionStateMachine {
     public Optional<ExecutionState> getLastState(ExecutionStateName nameState) {
         for (int i = states.size() - 1; i > 0; i--) {
             ExecutionState state = states.get(i);
-            if (state.getName() == nameState)
+            if (state.getName() == nameState) {
                 return Optional.of(state);
+            }
         }
         return Optional.empty();
     }

@@ -96,27 +96,35 @@ public class SchedulerBuilder {
         SchedulerConfiguration config = schedulerConfig.build();
         config.validate();
 
-        if (r2dbcClient == null)
+        if (r2dbcClient == null) {
             r2dbcClient = new R2dbcClient(DatabaseClient.builder()
                     .connectionFactory(connectionFactory)
                     .namedParameters(true)
                     .build());
-        if (taskResolver != null)
+        }
+        if (taskResolver != null) {
             taskResolver.add(tasks);
-        else
+        } else {
             taskResolver = new TaskResolver(tasks, schedulerMetricsRegistry, clock);
-        if (taskRepository == null)
+        }
+        if (taskRepository == null) {
             taskRepository = new PostgresTaskRepository(r2dbcClient, config.getTableName());
-        if (executionMapper == null)
+        }
+        if (executionMapper == null) {
             executionMapper = new ExecutionMapper();
-        if (serializer == null)
+        }
+        if (serializer == null) {
             serializer = new JacksonSerializer();
-        if (taskService == null)
+        }
+        if (taskService == null) {
             taskService = new R2dbcTaskService(taskRepository, taskResolver, executionMapper, config.getSchedulerName(), clock, serializer);
-        if (taskSchedulers == null)
+        }
+        if (taskSchedulers == null) {
             taskSchedulers = new DefaultTaskSchedulers(config);
-        if (executor == null)
+        }
+        if (executor == null) {
             executor = new ExecutorService(taskSchedulers, schedulerMetricsRegistry);
+        }
         return new DefaultSchedulerClient(taskService, executor, taskSchedulers, schedulerMetricsRegistry, config, clock);
     }
 }

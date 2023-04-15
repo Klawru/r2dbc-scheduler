@@ -122,8 +122,9 @@ public abstract class AbstractPostgresTest {
                 .clock(testClock)
                 .build();
         client.start();
-        if (autoClose)
+        if (autoClose) {
             stopSchedulerExtension.add(client);
+        }
         return client;
     }
 

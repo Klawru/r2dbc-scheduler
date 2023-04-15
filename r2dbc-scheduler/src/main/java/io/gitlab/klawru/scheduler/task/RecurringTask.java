@@ -66,10 +66,11 @@ public class RecurringTask<T> extends AbstractTask<T> implements ScheduleOnStart
 
     @Override
     public Mono<Void> onStartup(SchedulerClient scheduler, Clock clock) {
-        if (scheduleOnStartup != null)
+        if (scheduleOnStartup != null) {
             return scheduleOnStartup.onStartup(scheduler, clock, this);
-        else
+        } else {
             return Mono.empty();
+        }
     }
 
 

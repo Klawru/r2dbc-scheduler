@@ -45,8 +45,9 @@ public interface FailureHandler<T> {
             if (executionState instanceof FailedState) {
                 var failedState = (FailedState) executionState;
                 log.warn("Job '{}' failed {}-times, and removed", taskInstance.getTaskNameId(), execution.getConsecutiveFailures() + 1, failedState.getCause());
-            } else
+            } else {
                 log.warn("Job '{}' failed {}-times, and removed", taskInstance.getTaskNameId(), execution.getConsecutiveFailures() + 1);
+            }
             return executionOperations.remove(execution);
         }
     }
@@ -57,8 +58,9 @@ public interface FailureHandler<T> {
         private final Duration duration;
 
         public OnFailureRetryLater(int retry, Duration sleepDuration) {
-            if (retry < 1)
+            if (retry < 1) {
                 throw new IllegalArgumentException("The number of retries cannot be less than 1");
+            }
             this.retry = retry;
             this.duration = sleepDuration;
         }

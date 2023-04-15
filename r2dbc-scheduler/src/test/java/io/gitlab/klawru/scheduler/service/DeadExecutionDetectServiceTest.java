@@ -17,9 +17,9 @@
 package io.gitlab.klawru.scheduler.service;
 
 import io.gitlab.klawru.scheduler.AbstractPostgresTest;
-import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.ExecutionOperations;
 import io.gitlab.klawru.scheduler.SchedulerClient;
+import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
 import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
 import io.gitlab.klawru.scheduler.repository.postgres.PostgresTaskRepository;

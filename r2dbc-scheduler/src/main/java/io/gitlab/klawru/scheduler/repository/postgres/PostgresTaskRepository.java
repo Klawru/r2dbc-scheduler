@@ -50,10 +50,11 @@ public class PostgresTaskRepository implements TaskRepository {
                 .map(existingExecution -> false)
                 .switchIfEmpty(create(instance, executionTime, data))
                 .flatMap(created -> {
-                    if (TRUE.equals(created))
+                    if (TRUE.equals(created)) {
                         return Mono.empty();
-                    else
+                    } else {
                         return Mono.error(new RepositoryException("Failed to save the task to the database. Perhaps such a task has already been created", instance));
+                    }
                 });
     }
 
@@ -72,10 +73,11 @@ public class PostgresTaskRepository implements TaskRepository {
                                     .bind("executionTime", executionTime)
                                     .bind("picked", false)
                                     .bind("version", 1L);
-                            if (data.isPresent())
+                            if (data.isPresent()) {
                                 bindTarget.bind("taskData", Optional.ofNullable(data.getData())
                                         .map(Json::of)
                                         .orElse(null), Json.class);
+                            }
                             return bindTarget;
                         })
                 .map(created -> {
@@ -257,19 +259,21 @@ public class PostgresTaskRepository implements TaskRepository {
                                     .bind("taskName", taskInstanceId.getTaskName())
                                     .bind("taskInstance", taskInstanceId.getId())
                                     .bind("version", version);
-                            if (newData.isPresent())
+                            if (newData.isPresent()) {
                                 bindTarget.bind("taskData",
                                         Optional.ofNullable(newData.getData())
                                                 .map(Json::of)
                                                 .orElse(null),
                                         Json.class);
+                            }
                             return bindTarget;
                         })
                 .flatMap(updated -> {
-                    if (updated != 1)
+                    if (updated != 1) {
                         return Mono.error(() ->
                                 new RepositoryException("Expected one execution to be updated, but updated " + updated + ". Indicates a bug.", taskInstanceId)
                         );
+                    }
                     return Mono.empty();
                 });
     }

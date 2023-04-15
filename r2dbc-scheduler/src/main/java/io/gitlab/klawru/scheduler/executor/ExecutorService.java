@@ -27,6 +27,7 @@ import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.util.MapperUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.util.Pair;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Mono;
@@ -50,14 +51,14 @@ public class ExecutorService implements TaskExecutor {
     private final SchedulerMetricsRegistry registry;
 
     private final AtomicInteger currentlyInQueueOrProcessing = new AtomicInteger(0);
-    private final ConcurrentHashMap<UUID, Pair<Execution<?>, ExecutionSubscriber<?>>> currentlyProcessing = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Pair<Execution<?>, ExecutionSubscriber>> currentlyProcessing = new ConcurrentHashMap<>();
 
 
     @Override
     public <T> void addToQueue(Execution<T> execution, ExecutionContext<T> context, ExecutionOperations executionOperations) {
         TaskInstance<T> taskInstance = execution.getTaskInstance();
         log.debug("Add queue task {}", taskInstance);
-        ExecutionSubscriber<Void> executionSubscriber = addCurrentlyProcessing(execution);
+        ExecutionSubscriber executionSubscriber = addCurrentlyProcessing(execution);
         Mono.defer(() -> {
                     execution.processed();
                     AbstractTask<T> task = taskInstance.getTask();
@@ -82,8 +83,8 @@ public class ExecutorService implements TaskExecutor {
         if (lastState.isPresent()) {
             ExecutionState executionState = lastState.get();
             UUID enqueuedId = ((EnqueuedState) executionState).getEnqueuedId();
-            Pair<Execution<?>, ExecutionSubscriber<?>> executionSubscriberPair = currentlyProcessing.get(enqueuedId);
-            ExecutionSubscriber<?> subscriber = executionSubscriberPair.getSecond();
+            Pair<Execution<?>, ExecutionSubscriber> executionSubscriberPair = currentlyProcessing.get(enqueuedId);
+            ExecutionSubscriber subscriber = executionSubscriberPair.getSecond();
             subscriber.cancel();
         } else {
             log.info("Cannot stop execution={} not found state ENQUEUED", execution.getTaskInstance());
@@ -113,9 +114,9 @@ public class ExecutorService implements TaskExecutor {
         });
     }
 
-    private <T> ExecutionSubscriber<Void> addCurrentlyProcessing(Execution<T> execution) {
+    private <T> ExecutionSubscriber addCurrentlyProcessing(Execution<T> execution) {
         UUID executionId = UUID.randomUUID();
-        var executionSubscriber = new ExecutionSubscriber<Void>(executionId, this::removeCurrentlyProcessing);
+        var executionSubscriber = new ExecutionSubscriber(executionId, this::removeCurrentlyProcessing);
         currentlyInQueueOrProcessing.incrementAndGet();
         currentlyProcessing.put(executionId, Pair.of(execution, executionSubscriber));
         execution.enqueued(executionId);
@@ -160,7 +161,7 @@ public class ExecutorService implements TaskExecutor {
                 .map(Pair::getFirst);
     }
 
-    private static class ExecutionSubscriber<T> extends BaseSubscriber<T> {
+    private static class ExecutionSubscriber extends BaseSubscriber<Void> {
         private final UUID id;
         private final Consumer<UUID> hookFinally;
 
@@ -170,7 +171,7 @@ public class ExecutorService implements TaskExecutor {
         }
 
         @Override
-        protected void hookFinally(SignalType type) {
+        protected void hookFinally(@NotNull SignalType type) {
             super.hookFinally(type);
             hookFinally.accept(id);
         }

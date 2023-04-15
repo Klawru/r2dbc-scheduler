@@ -88,9 +88,9 @@ public class ScheduleRecurringOnStartUp<T> {
 
         if (schedule.isDeterministic()) {
             Duration duration = Duration.between(currentExecutionTime, newExecutionTime).abs();
-            if (duration.compareTo(Duration.ofSeconds(1)) <= 0)
+            if (duration.compareTo(Duration.ofSeconds(1)) <= 0) {
                 return Optional.empty();
-            else {
+            } else {
                 return Optional.of(newExecutionTime);
             }
         } else {

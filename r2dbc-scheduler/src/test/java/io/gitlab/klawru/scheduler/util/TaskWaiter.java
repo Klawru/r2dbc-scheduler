@@ -37,8 +37,9 @@ public class TaskWaiter {
         if (count != lastCount) {
             lastTaskCount.set(count);
             return true;
-        } else
+        } else {
             return false;
+        }
     }
 
     public void reset() {
