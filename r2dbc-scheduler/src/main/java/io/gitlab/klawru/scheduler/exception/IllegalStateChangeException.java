@@ -15,11 +15,11 @@
  */
 package io.gitlab.klawru.scheduler.exception;
 
-import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
+import io.gitlab.klawru.scheduler.executor.execution.state.AbstractExecutionState;
 
 public class IllegalStateChangeException extends AbstractSchedulerException {
 
-    public IllegalStateChangeException(ExecutionState current, ExecutionState next) {
+    public IllegalStateChangeException(AbstractExecutionState current, AbstractExecutionState next) {
         super("Unable to move from " + current.getName() + " to " + next.getName() + " It's bug");
     }
 }

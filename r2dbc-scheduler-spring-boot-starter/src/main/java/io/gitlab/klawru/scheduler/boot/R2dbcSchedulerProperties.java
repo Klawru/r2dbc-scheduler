@@ -46,10 +46,15 @@ public class R2dbcSchedulerProperties {
     @DurationUnit(MINUTES)
     private Duration heartbeatInterval = HEARTBEAT_INTERVAL_DEFAULT;
     /**
+     * How often is unknown tasks will be deleted.
+     */
+    @DurationUnit(HOURS)
+    private Duration unresolvedDeleteInterval = UNRESOLVED_DELETE_AFTER_DEFAULT;
+    /**
      * Time after which unknown tasks are deleted
      */
     @DurationUnit(HOURS)
-    private Duration unresolvedDeleteInterval = UNRESOLVED_DELETE_INTERVAL_DEFAULT;
+    private Duration unresolvedDeleteAfterInterval = UNRESOLVED_DELETE_AFTER_DEFAULT;
     /**
      * Time after which unknown tasks will be deleted.
      */
@@ -86,6 +91,7 @@ public class R2dbcSchedulerProperties {
                 .heartbeatInterval(heartbeatInterval)
                 .schedulerName(schedulerName)
                 .tableName(tableName)
+                .deleteUnresolvedInterval(unresolvedDeleteInterval)
                 .deleteUnresolvedAfter(deleteUnresolvedAfter);
     }
 }

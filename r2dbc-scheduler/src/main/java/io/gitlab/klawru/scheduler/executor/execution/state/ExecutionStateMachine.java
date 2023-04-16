@@ -22,15 +22,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class ExecutionStateMachine {
-    private final ArrayList<ExecutionState> states;
+    private final ArrayList<AbstractExecutionState> states;
 
-    public ExecutionStateMachine(ExecutionState first) {
+    public ExecutionStateMachine(AbstractExecutionState first) {
         states = new ArrayList<>(5);
         states.add(Objects.requireNonNull(first, "First state can not null"));
     }
 
-    public <T extends ExecutionState> T changeState(T next) {
-        ExecutionState current = currentState();
+    public <T extends AbstractExecutionState> T changeState(T next) {
+        AbstractExecutionState current = currentState();
         if (!canTransition(current, next)) {
             throw new IllegalStateChangeException(current, next);
         }
@@ -41,18 +41,18 @@ public class ExecutionStateMachine {
     @Override
     public String toString() {
         return "{" +
-                "state=" + getLastState() + "," +
+                "state=" + currentState() + "," +
                 "historySize=" + states.size() +
                 '}';
     }
 
-    public ExecutionState currentState() {
+    public AbstractExecutionState currentState() {
         return states.get(states.size() - 1);
     }
 
-    public Optional<ExecutionState> getLastState(ExecutionStateName nameState) {
+    public Optional<AbstractExecutionState> getLastState(ExecutionStateName nameState) {
         for (int i = states.size() - 1; i > 0; i--) {
-            ExecutionState state = states.get(i);
+            AbstractExecutionState state = states.get(i);
             if (state.getName() == nameState) {
                 return Optional.of(state);
             }
@@ -60,11 +60,11 @@ public class ExecutionStateMachine {
         return Optional.empty();
     }
 
-    public boolean canTransition(ExecutionState current, ExecutionState next) {
+    protected static boolean canTransition(AbstractExecutionState current, AbstractExecutionState next) {
         return canTransition(current.getName(), next.getName());
     }
 
-    public boolean canTransition(ExecutionStateName current, ExecutionStateName next) {
+    protected static boolean canTransition(ExecutionStateName current, ExecutionStateName next) {
         switch (current) {
             case PICKED:
                 return next == ExecutionStateName.ENQUEUED;
@@ -83,7 +83,4 @@ public class ExecutionStateMachine {
         }
     }
 
-    public ExecutionState getLastState() {
-        return states.get(states.size() - 1);
-    }
 }

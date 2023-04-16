@@ -21,8 +21,8 @@ import io.gitlab.klawru.scheduler.TaskResolver;
 import io.gitlab.klawru.scheduler.exception.ExecutionException;
 import io.gitlab.klawru.scheduler.exception.TaskServiceException;
 import io.gitlab.klawru.scheduler.executor.Execution;
+import io.gitlab.klawru.scheduler.executor.execution.state.AbstractExecutionState;
 import io.gitlab.klawru.scheduler.executor.execution.state.DeadExecutionState;
-import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
 import io.gitlab.klawru.scheduler.executor.execution.state.PickedState;
 import io.gitlab.klawru.scheduler.executor.execution.state.ViewState;
 import io.gitlab.klawru.scheduler.repository.serializer.Serializer;
@@ -85,8 +85,7 @@ public class R2dbcTaskService implements TaskService, Closeable {
         }
         return repository.lockAndGetDue(schedulerName, clock.now(), limit, taskResolver.getUnresolvedName())
                 .map(this::findTaskForPick)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .as(MapperUtil::get);
     }
 
     @NotNull
@@ -136,7 +135,7 @@ public class R2dbcTaskService implements TaskService, Closeable {
     }
 
     public <T> Mono<Void> reschedule(Execution<T> execution, NextExecutionTime nextExecutionTime, DataHolder<T> dataSupplier) {
-        ExecutionState executionState = execution.currentState();
+        AbstractExecutionState executionState = execution.currentState();
         Instant executionTime = nextExecutionTime.nextExecutionTime(clock.now());
         DataHolder<byte[]> serializedData = dataSupplier.map(serializer::serialize);
         switch (executionState.getName()) {
@@ -174,8 +173,7 @@ public class R2dbcTaskService implements TaskService, Closeable {
     public Flux<Execution<?>> getAll() {
         return repository.getAll()
                 .map(this::findTaskForView)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .as(MapperUtil::get);
     }
 
     @Override
@@ -191,8 +189,7 @@ public class R2dbcTaskService implements TaskService, Closeable {
     public Mono<Void> rescheduleDeadExecutionTask(Duration duration) {
         return repository.getDeadExecution(clock.now().minus(duration))
                 .map(this::findTaskForDeadExecution)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .as(MapperUtil::get)
                 .flatMap(execution -> execution.onDeadExecution(DefaultExecutionOperations.of(this)))
                 .then();
     }
@@ -207,24 +204,21 @@ public class R2dbcTaskService implements TaskService, Closeable {
     public Mono<Execution<?>> findExecution(TaskInstanceId taskInstanceId) {
         return repository.getExecution(taskInstanceId)
                 .map(this::findTaskForView)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .as(MapperUtil::get);
     }
 
     @Override
     public Flux<Execution<?>> findExecution(boolean picked) {
         return repository.getExecutionsForView(null, picked)
                 .map(this::findTaskForView)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .as(MapperUtil::get);
     }
 
     @Override
     public <T> Flux<Execution<T>> findExecution(String taskName, boolean picked, Class<T> dataClass) {
         return repository.getExecutions(taskName, picked)
                 .map((ExecutionEntity executionEntity) -> findTaskForView(executionEntity, dataClass))
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .as(MapperUtil::get);
     }
 
     @Override
@@ -266,7 +260,7 @@ public class R2dbcTaskService implements TaskService, Closeable {
     }
 
     @NotNull
-    private <T> Execution<T> mapWithStatus(ExecutionEntity executionEntity, AbstractTask<T> task, ExecutionState state) {
+    private <T> Execution<T> mapWithStatus(ExecutionEntity executionEntity, AbstractTask<T> task, AbstractExecutionState state) {
         Supplier<T> dataSupplier = MapperUtil.memoize(() -> serializer.deserialize(task.getDataClass(), executionEntity.getData()));
         return executionMapper.mapToExecution(executionEntity, state, task, dataSupplier);
     }

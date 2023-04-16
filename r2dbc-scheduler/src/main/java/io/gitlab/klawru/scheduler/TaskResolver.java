@@ -16,6 +16,7 @@
  */
 package io.gitlab.klawru.scheduler;
 
+import io.gitlab.klawru.scheduler.exception.TaskServiceException;
 import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import io.gitlab.klawru.scheduler.task.AbstractTask;
 import io.gitlab.klawru.scheduler.util.Clock;
@@ -23,7 +24,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -42,6 +46,10 @@ public class TaskResolver {
 
     public void add(Collection<AbstractTask<?>> tasks) {
         for (AbstractTask<?> abstractTask : tasks) {
+            AbstractTask<?> task = taskMap.get(abstractTask.getName());
+            if (task != null) {
+                throw new TaskServiceException("Task with same name already exist");
+            }
             taskMap.put(abstractTask.getName(), abstractTask);
         }
     }

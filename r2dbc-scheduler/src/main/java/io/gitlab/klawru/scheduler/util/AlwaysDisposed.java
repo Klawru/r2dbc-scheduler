@@ -23,7 +23,7 @@ public class AlwaysDisposed implements Disposable {
     private AlwaysDisposed() {
     }
 
-    public static AlwaysDisposed of() {
+    public static AlwaysDisposed get() {
         return ALWAYS_DISPOSED;
     }
 

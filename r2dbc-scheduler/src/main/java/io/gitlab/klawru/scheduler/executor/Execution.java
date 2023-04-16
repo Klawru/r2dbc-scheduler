@@ -46,7 +46,7 @@ public class Execution<T> {
 
 
     @SuppressWarnings("java:S107")
-    public Execution(TaskInstance<T> taskInstance, ExecutionState state, Instant executionTime, boolean picked, String pickedBy, int consecutiveFailures, Instant lastHeartbeat, long version, Instant lastFailure, Instant lastSuccess) {
+    public Execution(TaskInstance<T> taskInstance, AbstractExecutionState state, Instant executionTime, boolean picked, String pickedBy, int consecutiveFailures, Instant lastHeartbeat, long version, Instant lastFailure, Instant lastSuccess) {
         this.taskInstance = taskInstance;
         this.executionTime = executionTime;
         this.picked = picked;
@@ -76,15 +76,11 @@ public class Execution<T> {
     }
 
 
-    public ExecutionState currentState() {
+    public AbstractExecutionState currentState() {
         return states.currentState();
     }
 
-    public ExecutionState getLastState() {
-        return states.getLastState();
-    }
-
-    public Optional<ExecutionState> getLastState(ExecutionStateName nameState) {
+    public Optional<AbstractExecutionState> getLastState(ExecutionStateName nameState) {
         return states.getLastState(nameState);
     }
 

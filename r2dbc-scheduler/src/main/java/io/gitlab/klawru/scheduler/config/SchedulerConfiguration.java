@@ -29,7 +29,8 @@ public class SchedulerConfiguration {
 
     public static final int THREADS_DEFAULT = 10;
     public static final Duration POLLING_INTERVAL_DEFAULT = Duration.ofSeconds(10);
-    public static final Duration UNRESOLVED_DELETE_INTERVAL_DEFAULT = Duration.ofDays(14);
+    public static final Duration UNRESOLVED_DELETE_INTERVAL = POLLING_INTERVAL_DEFAULT.multipliedBy(10);
+    public static final Duration UNRESOLVED_DELETE_AFTER_DEFAULT = Duration.ofDays(14);
     public static final Duration SHUTDOWN_MAX_WAIT_DEFAULT = Duration.ofMinutes(10);
     public static final double LOWER_LIMIT_FRACTION_OF_THREADS_DEFAULT = 0.5;
     public static final double UPPER_LIMIT_FRACTION_OF_THREADS_DEFAULT = 1;
@@ -56,6 +57,12 @@ public class SchedulerConfiguration {
      */
     @Builder.Default
     Duration shutdownMaxWait = SHUTDOWN_MAX_WAIT_DEFAULT;
+
+    /**
+     * How often is unknown tasks will be deleted.
+     */
+    @Builder.Default
+    Duration deleteUnresolvedInterval = DELETE_UNRESOLVED_AFTER_DEFAULT;
     /**
      * Time after which unknown tasks will be deleted.
      */

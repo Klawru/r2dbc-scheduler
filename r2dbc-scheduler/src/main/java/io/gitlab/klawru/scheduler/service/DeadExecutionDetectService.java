@@ -45,7 +45,7 @@ public class DeadExecutionDetectService implements StartPauseService {
         this.taskService = taskService;
         this.schedulers = schedulers;
         this.config = config;
-        this.deadExecutionDetectDisposable = AlwaysDisposed.of();
+        this.deadExecutionDetectDisposable = AlwaysDisposed.get();
         this.trigger = new Trigger();
     }
 

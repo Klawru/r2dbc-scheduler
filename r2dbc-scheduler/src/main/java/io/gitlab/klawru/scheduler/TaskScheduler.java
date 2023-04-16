@@ -68,7 +68,7 @@ public class TaskScheduler {
         client.reschedule(schedule, instant, newData).block();
     }
 
-    public void runAnyDueExecutions() {
+    public void fetchTask() {
         client.fetchTask();
     }
 

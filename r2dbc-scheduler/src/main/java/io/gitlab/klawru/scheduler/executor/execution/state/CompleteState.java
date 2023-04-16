@@ -18,7 +18,7 @@ package io.gitlab.klawru.scheduler.executor.execution.state;
 import lombok.ToString;
 
 @ToString(callSuper = true)
-public class CompleteState extends ExecutionState {
+public class CompleteState extends AbstractExecutionState {
     public CompleteState() {
         super(ExecutionStateName.COMPLETE);
     }

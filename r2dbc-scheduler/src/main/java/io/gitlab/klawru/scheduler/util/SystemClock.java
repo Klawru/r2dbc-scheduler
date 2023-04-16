@@ -19,11 +19,10 @@ import java.time.Instant;
 
 
 public class SystemClock implements Clock {
-    private final java.time.Clock clock = java.time.Clock.systemUTC();
 
     @Override
     public Instant now() {
-        return clock.instant();
+        return Instant.now();
     }
 
 }

@@ -19,9 +19,5 @@ package io.gitlab.klawru.scheduler.util;
 import java.time.Instant;
 
 public interface Clock {
-    static SystemClock systemUTC() {
-        return new SystemClock();
-    }
-
     Instant now();
 }

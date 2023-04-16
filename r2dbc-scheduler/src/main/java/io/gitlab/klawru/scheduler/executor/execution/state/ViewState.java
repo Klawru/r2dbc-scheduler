@@ -18,7 +18,7 @@ package io.gitlab.klawru.scheduler.executor.execution.state;
 import lombok.ToString;
 
 @ToString(callSuper = true)
-public class ViewState extends ExecutionState {
+public class ViewState extends AbstractExecutionState {
     public ViewState() {
         super(ExecutionStateName.VIEW);
     }
