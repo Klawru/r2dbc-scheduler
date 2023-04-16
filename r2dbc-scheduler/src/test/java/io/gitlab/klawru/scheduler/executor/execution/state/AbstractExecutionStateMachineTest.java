@@ -28,9 +28,10 @@ class AbstractExecutionStateMachineTest {
 
     @Test
     void changeState() {
-        var machine = new ExecutionStateMachine(new PickedState());
+        PickedState pickedState = new PickedState();
+        var machine = new ExecutionStateMachine(pickedState);
 
-        assertThatThrownBy(() -> machine.changeState(new PickedState()))
+        assertThatThrownBy(() -> machine.changeState(pickedState))
                 .isInstanceOf(IllegalStateChangeException.class);
     }
 
