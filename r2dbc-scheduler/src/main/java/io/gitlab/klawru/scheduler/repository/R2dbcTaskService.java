@@ -186,12 +186,12 @@ public class R2dbcTaskService implements TaskService, Closeable {
     }
 
     @Override
-    public Mono<Void> rescheduleDeadExecutionTask(Duration duration) {
+    public Mono<Long> rescheduleDeadExecutionTask(Duration duration) {
         return repository.getDeadExecution(clock.now().minus(duration))
                 .map(this::findTaskForDeadExecution)
                 .as(MapperUtil::get)
                 .flatMap(execution -> execution.onDeadExecution(DefaultExecutionOperations.of(this)))
-                .then();
+                .count();
     }
 
     @Override

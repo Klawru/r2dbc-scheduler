@@ -51,7 +51,7 @@ public interface TaskService extends Closeable {
 
     Mono<Integer> deleteUnresolvedTask(Duration deleteUnresolvedAfter);
 
-    Mono<Void> rescheduleDeadExecutionTask(Duration durationNotUpdate);
+    Mono<Long> rescheduleDeadExecutionTask(Duration durationNotUpdate);
 
     <T> Mono<Execution<T>> findExecution(TaskInstance<T> taskInstanceId);
 

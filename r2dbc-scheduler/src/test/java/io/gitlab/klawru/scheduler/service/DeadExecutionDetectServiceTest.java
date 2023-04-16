@@ -16,73 +16,52 @@
 
 package io.gitlab.klawru.scheduler.service;
 
-import io.gitlab.klawru.scheduler.AbstractPostgresTest;
-import io.gitlab.klawru.scheduler.ExecutionOperations;
-import io.gitlab.klawru.scheduler.SchedulerClient;
-import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
-import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
-import io.gitlab.klawru.scheduler.repository.postgres.PostgresTaskRepository;
-import io.gitlab.klawru.scheduler.task.OneTimeTask;
-import io.gitlab.klawru.scheduler.task.callback.DeadExecutionHandler.ReviveDeadExecution;
-import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
-import io.gitlab.klawru.scheduler.util.DataHolder;
-import io.gitlab.klawru.scheduler.util.SchedulerBuilder;
-import io.gitlab.klawru.scheduler.util.Tasks;
-import io.gitlab.klawru.scheduler.util.TestTasks;
-import io.r2dbc.spi.ConnectionFactory;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.AfterEach;
+import io.gitlab.klawru.scheduler.config.SchedulerConfiguration;
+import io.gitlab.klawru.scheduler.executor.DefaultTaskSchedulers;
+import io.gitlab.klawru.scheduler.repository.TaskService;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.r2dbc.core.DatabaseClient;
+import org.mockito.Mockito;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.byLessThan;
-import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 
-class DeadExecutionDetectServiceTest extends AbstractPostgresTest {
+@Slf4j
+class DeadExecutionDetectServiceTest {
+    Duration pollingInterval = Duration.ofSeconds(1);
+    Duration deadExecutionDetectInterval = pollingInterval.multipliedBy(2);
 
-    final Duration heartbeatInterval = Duration.ofSeconds(10);
-
-    SchedulerClient client;
-    PostgresTaskRepository repository;
-
-    TestTasks.CountingHandler<Void> handlerA;
-    DeadExecutionCounter<Void> deadExecutionCounter;
-    OneTimeTask<Void> taskA;
+    VirtualTimeScheduler virtualTimeScheduler;
+    TaskService mockTaskService;
+    DeadExecutionDetectService deleteUnresolvedTaskService;
 
     @BeforeEach
     void setUp() {
-        handlerA = new TestTasks.CountingHandler<>();
-        deadExecutionCounter = new DeadExecutionCounter<>();
-        taskA = Tasks.oneTime("taskA")
-                .onDeadExecution(deadExecutionCounter)
-                .execute(handlerA);
-
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        repository = new PostgresTaskRepository(new R2dbcClient(DatabaseClient.create(connectionFactory)),
-                "scheduled_job");
-        client = SchedulerBuilder.create(connectionFactory, taskA)
-                .clock(testClock)
-                .schedulerConfig(configBuilder -> configBuilder
-                        .schedulerName("test-scheduler")
-                        .heartbeatInterval(heartbeatInterval))
+        SchedulerConfiguration configuration = SchedulerConfiguration.builder()
+                .heartbeatInterval(pollingInterval)
+                .pollingInterval(pollingInterval)
+                .schedulerName("UpdateHeartbeatServiceTest")
                 .build();
+
+        virtualTimeScheduler = VirtualTimeScheduler.getOrSet();
+        DefaultTaskSchedulers taskSchedulers = new DefaultTaskSchedulers(2, 2,
+                2,
+                virtualTimeScheduler,
+                virtualTimeScheduler);
+        mockTaskService = Mockito.mock(TaskService.class);
+        deleteUnresolvedTaskService = new DeadExecutionDetectService(mockTaskService, taskSchedulers, configuration);
     }
 
-    @AfterEach
-    void tearDown() {
-        Optional.ofNullable(client).ifPresent(SchedulerClient::pause);
+    @AfterAll
+    static void tearDown() {
+        VirtualTimeScheduler.reset();
     }
 
     /**
@@ -90,52 +69,39 @@ class DeadExecutionDetectServiceTest extends AbstractPostgresTest {
      */
     @Test
     void detectDeadExecution() {
-        TaskInstance<Void> taskInstanceA1 = taskA.instance("1");
-        Instant pickedTime = testClock.now().minus(heartbeatInterval.multipliedBy(10));
-        //save task to DB
-        repository.createIfNotExists(taskInstanceA1, pickedTime, DataHolder.empty()).block();
-        //lock a task by another scheduler
-        var pickedExecutions = repository.lockAndGetDue("anotherScheduler",
-                pickedTime,
-                1,
-                List.of()).collectList().block();
-        Assertions.assertThat(pickedExecutions).hasSize(1)
-                .first()
-                .returns(taskInstanceA1.getTaskName(), ExecutionEntity::getTaskName)
-                .returns(taskInstanceA1.getId(), ExecutionEntity::getId)
-                .returns(true, ExecutionEntity::isPicked);
-        testClock.plusSecond(10);
-        //When
-        client.start();
-        client.detectDeadExecution();
+        Mockito.when(mockTaskService.rescheduleDeadExecutionTask(any())).thenReturn(Mono.just(1L));
         //Then
-        await("Until the task is rescheduled")
-                .atMost(10, SECONDS)
-                .until(() -> deadExecutionCounter.getCount() != 0);
-
-        Optional<ExecutionEntity> rescheduled = repository.getExecution(taskInstanceA1).blockOptional();
-        assertThat(rescheduled).get()
-                .returns(taskInstanceA1.getTaskName(), ExecutionEntity::getTaskName)
-                .returns(taskInstanceA1.getId(), ExecutionEntity::getId)
-                .returns(1, ExecutionEntity::getConsecutiveFailures)
-                .satisfies(execution -> assertThat(execution.getLastFailure())
-                        .isCloseTo(testClock.now(), byLessThan(100, MILLIS)))
-                .satisfies(execution -> assertThat(execution.getExecutionTime())
-                        .isCloseTo(testClock.now(), byLessThan(100, MILLIS)));
+        StepVerifier.withVirtualTime(() -> deleteUnresolvedTaskService.getRescheduleDeadExecutionFlux().log(log.getName()), 4)
+                .expectSubscription()
+                .expectNoEvent(deadExecutionDetectInterval)
+                .expectNext(1L)
+                .expectNoEvent(deadExecutionDetectInterval)
+                .expectNext(1L)
+                .thenCancel()
+                .verify(deadExecutionDetectInterval.multipliedBy(10));
     }
 
-    static class DeadExecutionCounter<T> extends ReviveDeadExecution<T> {
+    @Test
+    void start() {
+        Mockito.when(mockTaskService.rescheduleDeadExecutionTask(any())).thenReturn(Mono.just(1L));
+        //When
+        deleteUnresolvedTaskService.start();
+        virtualTimeScheduler.advanceTimeBy(deadExecutionDetectInterval.multipliedBy(2));
+        //Then
+        Mockito.verify(mockTaskService, atLeast(1)).rescheduleDeadExecutionTask(any());
+        deleteUnresolvedTaskService.pause();
+    }
 
-        private final AtomicInteger count = new AtomicInteger();
-
-        @Override
-        public Mono<Void> deadExecution(Execution<? super T> execution, ExecutionOperations executionOperations) {
-            return super.deadExecution(execution, executionOperations)
-                    .doFinally(signalType -> count.incrementAndGet());
-        }
-
-        public int getCount() {
-            return count.get();
-        }
+    @Test
+    void pause() {
+        Mockito.when(mockTaskService.rescheduleDeadExecutionTask(any())).thenReturn(Mono.just(1L));
+        //When
+        deleteUnresolvedTaskService.start();
+        virtualTimeScheduler.advanceTimeBy(deadExecutionDetectInterval);
+        deleteUnresolvedTaskService.pause();
+        Mockito.reset(mockTaskService);
+        virtualTimeScheduler.advanceTimeBy(deadExecutionDetectInterval.multipliedBy(2));
+        //Then
+        Mockito.verify(mockTaskService, Mockito.timeout(pollingInterval.toMillis()).times(0)).rescheduleDeadExecutionTask(any());
     }
 }
