@@ -1,4 +1,7 @@
 # r2dbc-scheduler
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=klawru_r2dbc-scheduler&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=klawru_r2dbc-scheduler)
+![pipeline](https://gitlab.com/klawru/r2dbc-scheduler/badges/main/pipeline.svg)
+![coverage](https://gitlab.com/klawru/r2dbc-scheduler/badges/main/coverage.svg)
 
 This is a reactive task scheduler inspired by the [db-scheduler](https://github.com/kagkarlsson/db-scheduler) project.
 Tasks are stored in persistent storage using R2DBC and Spring DatabaseClient.
