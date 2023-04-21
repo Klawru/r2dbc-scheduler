@@ -17,6 +17,7 @@
 package io.gitlab.klawru.scheduler.repository;
 
 import io.gitlab.klawru.scheduler.DefaultExecutionOperations;
+import io.gitlab.klawru.scheduler.TaskExample;
 import io.gitlab.klawru.scheduler.TaskResolver;
 import io.gitlab.klawru.scheduler.exception.ExecutionException;
 import io.gitlab.klawru.scheduler.exception.TaskServiceException;
@@ -29,7 +30,6 @@ import io.gitlab.klawru.scheduler.repository.serializer.Serializer;
 import io.gitlab.klawru.scheduler.task.AbstractTask;
 import io.gitlab.klawru.scheduler.task.callback.ScheduleOnStartup;
 import io.gitlab.klawru.scheduler.task.instance.NextExecutionTime;
-import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
 import io.gitlab.klawru.scheduler.util.Clock;
 import io.gitlab.klawru.scheduler.util.DataHolder;
@@ -114,13 +114,13 @@ public class R2dbcTaskService implements TaskService, Closeable {
     }
 
     @Override
-    public Mono<Integer> removeExecutions(String taskName) {
+    public Mono<Integer> removeAllExecutions(String taskName) {
         return repository.removeAllExecutions(taskName);
     }
 
     @SuppressWarnings("unchecked")
     public <T> Mono<Void> reschedule(TaskInstanceId taskInstanceId, NextExecutionTime nextExecutionTime, DataHolder<T> newData) {
-        return repository.getExecution(taskInstanceId)
+        return repository.findExecution(taskInstanceId)
                 .map(this::findTaskForView)
                 .as(MapperUtil::get)
                 .flatMap(execution -> {
@@ -170,13 +170,6 @@ public class R2dbcTaskService implements TaskService, Closeable {
     }
 
     @Override
-    public Flux<Execution<?>> getAll() {
-        return repository.getAll()
-                .map(this::findTaskForView)
-                .as(MapperUtil::get);
-    }
-
-    @Override
     public Mono<Integer> deleteUnresolvedTask(Duration deleteUnresolvedAfter) {
         Collection<String> unresolvedName = taskResolver.getUnresolvedName();
         if (unresolvedName.isEmpty()) {
@@ -195,30 +188,15 @@ public class R2dbcTaskService implements TaskService, Closeable {
     }
 
     @Override
-    public <T> Mono<Execution<T>> findExecution(TaskInstance<T> taskInstanceId) {
-        return repository.getExecution(taskInstanceId)
-                .map(executionEntity -> mapWithStatus(executionEntity, taskInstanceId.getTask(), new ViewState()));
-    }
-
-    @Override
-    public Mono<Execution<?>> findExecution(TaskInstanceId taskInstanceId) {
-        return repository.getExecution(taskInstanceId)
-                .map(this::findTaskForView)
+    public <T> Flux<Execution<T>> findExecutions(TaskExample<T> taskExample) {
+        return repository.findExecutions(taskExample)
+                .map(executionEntity -> findTaskForView(executionEntity, taskExample.getDataClass()))
                 .as(MapperUtil::get);
     }
 
     @Override
-    public Flux<Execution<?>> findExecution(boolean picked) {
-        return repository.getExecutionsForView(null, picked)
-                .map(this::findTaskForView)
-                .as(MapperUtil::get);
-    }
-
-    @Override
-    public <T> Flux<Execution<T>> findExecution(String taskName, boolean picked, Class<T> dataClass) {
-        return repository.getExecutions(taskName, picked)
-                .map((ExecutionEntity executionEntity) -> findTaskForView(executionEntity, dataClass))
-                .as(MapperUtil::get);
+    public <T> Mono<Long> countExecution(TaskExample<T> taskExample) {
+        return repository.countExecutions(taskExample);
     }
 
     @Override
@@ -228,18 +206,16 @@ public class R2dbcTaskService implements TaskService, Closeable {
                 .map(ScheduleOnStartup.class::cast);
     }
 
-    @NotNull
     private Optional<Execution<?>> findTaskForPick(ExecutionEntity executionEntity) {
         return taskResolver.findTask(executionEntity.getTaskName())
                 .map((AbstractTask<?> task) -> mapForPick(executionEntity, task));
     }
 
     @SuppressWarnings("unchecked")
-    @NotNull
     private <T> Optional<Execution<T>> findTaskForView(ExecutionEntity executionEntity, Class<T> dataClass) {
         return taskResolver.findTask(executionEntity.getTaskName())
                 .map(task -> {
-                    if (task.getDataClass().isAssignableFrom(dataClass)) {
+                    if (dataClass.isAssignableFrom(task.getDataClass())) {
                         AbstractTask<T> taskT = (AbstractTask<T>) task;
                         return mapWithStatus(executionEntity, taskT, new ViewState());
                     }
@@ -247,19 +223,16 @@ public class R2dbcTaskService implements TaskService, Closeable {
                 });
     }
 
-    @NotNull
     private Optional<Execution<?>> findTaskForView(ExecutionEntity executionEntity) {
         return taskResolver.findTask(executionEntity.getTaskName())
                 .map(task -> mapWithStatus(executionEntity, task, new ViewState()));
     }
 
-    @NotNull
     private Optional<Execution<?>> findTaskForDeadExecution(ExecutionEntity executionEntity) {
         return taskResolver.findTask(executionEntity.getTaskName())
                 .map(task -> mapWithStatus(executionEntity, task, new DeadExecutionState()));
     }
 
-    @NotNull
     private <T> Execution<T> mapWithStatus(ExecutionEntity executionEntity, AbstractTask<T> task, AbstractExecutionState state) {
         Supplier<T> dataSupplier = MapperUtil.memoize(() -> serializer.deserialize(task.getDataClass(), executionEntity.getData()));
         return executionMapper.mapToExecution(executionEntity, state, task, dataSupplier);

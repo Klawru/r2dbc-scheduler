@@ -215,7 +215,7 @@ class SchedulerClientTest extends AbstractPostgresTest {
         TaskInstance<String> taskInstance = errorTask.instance("5", "data");
         scheduler.schedule(errorTask.instance("5", "data"), testClock.now());
         wailAllExecutionDone();
-        Assertions.assertThat(scheduler.getAllExecution())
+        Assertions.assertThat(scheduler.findExecution(TaskExample.all()))
                 .hasSize(1)
                 .first()
                 .returns(taskInstance.getTaskName(), execution -> execution.getTaskInstance().getTaskName())
@@ -231,7 +231,7 @@ class SchedulerClientTest extends AbstractPostgresTest {
         TaskInstance<String> taskInstance = errorTaskRemoveAfterError.instance("5", "data");
         scheduler.schedule(taskInstance);
         wailAllExecutionDone();
-        Assertions.assertThat(scheduler.getAllExecution()).isEmpty();
+        Assertions.assertThat(scheduler.findExecution(TaskExample.all())).isEmpty();
     }
 
     @Test
@@ -242,28 +242,28 @@ class SchedulerClientTest extends AbstractPostgresTest {
         scheduler.schedule(taskB.instance("18"), testClock.now().plusSeconds(10));
         scheduler.schedule(taskB.instance("19"), testClock.now().plusSeconds(10));
 
-        Assertions.assertThat(scheduler.getAllExecution()).hasSize(5);
-        Assertions.assertThat(scheduler.getScheduledExecutions()).hasSize(5);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.all())).hasSize(5);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.scheduled())).hasSize(5);
         assertThat(countExecutionsForTask(scheduler, taskA.getName(), Void.class)).isEqualTo(2);
         assertThat(countExecutionsForTask(scheduler, taskB.getName(), Void.class)).isEqualTo(3);
-        Assertions.assertThat(scheduler.getScheduledExecutionsForTask(taskB.getName(), Void.class)).hasSize(3);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.scheduled(taskB.getName(), Void.class))).hasSize(3);
     }
 
     @Test
     void getExecutionTest() {
         scheduler.schedule(taskA.instance("1"), testClock.now().plusSeconds(10));
 
-        Assertions.assertThat(scheduler.getExecution(taskA.instance("1"))).isPresent();
-        Assertions.assertThat(scheduler.getExecution(taskA.instance("2"))).isEmpty();
-        Assertions.assertThat(scheduler.getExecution(taskB.instance("1"))).isEmpty();
+        Assertions.assertThat(scheduler.findExecution(TaskExample.of(taskA.instance("1")))).hasSize(1);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.of(taskA.instance("2")))).isEmpty();
+        Assertions.assertThat(scheduler.findExecution(TaskExample.of(taskB.instance("1")))).isEmpty();
     }
 
     private void wailAllExecutionDone() {
         wailAllExecutionDone(scheduler.getClient());
     }
 
-    private <T> int countExecutionsForTask(TaskScheduler client, String taskName, Class<T> dataClass) {
-        return client.getScheduledExecutionsForTask(taskName, dataClass).size();
+    private <T> long countExecutionsForTask(TaskScheduler client, String taskName, Class<T> dataClass) {
+        return client.countExecution(TaskExample.scheduled(taskName, dataClass));
     }
 
 

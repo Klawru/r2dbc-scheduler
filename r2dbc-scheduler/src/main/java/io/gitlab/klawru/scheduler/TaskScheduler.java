@@ -19,13 +19,11 @@ package io.gitlab.klawru.scheduler;
 import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
-import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 public class TaskScheduler {
@@ -76,38 +74,21 @@ public class TaskScheduler {
         return client.getCountProcessingTask();
     }
 
-    public long countScheduledExecutions() {
-        Long count = client.getScheduledExecutions().count().block();
-        return Optional.ofNullable(count).orElse(0L);
-    }
-
-    public Optional<Execution<?>> getExecution(TaskInstanceId instanceId) {
-        return client.getExecution(instanceId).blockOptional();
-    }
-
-    public List<Execution<?>> getAllExecution() {
-        return client.getAllExecution()
+    public <T> List<Execution<T>> findExecution(TaskExample<T> taskExample) {
+        return client.findExecutions(taskExample)
                 .collectList()
                 .blockOptional()
                 .orElse(List.of());
     }
 
-    public List<Execution<?>> getScheduledExecutions() {
-        return client.getScheduledExecutions()
-                .collectList()
+    public <T> Long countExecution(TaskExample<T> taskExample) {
+        return client.countExecution(taskExample)
                 .blockOptional()
-                .orElse(List.of());
+                .orElse(0L);
     }
 
-    public <T> List<Execution<T>> getScheduledExecutionsForTask(String name, Class<T> dataClass) {
-        return client.getScheduledExecutionsForTask(name, dataClass)
-                .collectList()
-                .blockOptional()
-                .orElse(List.of());
-    }
-
-    public SchedulerMetricsRegistry getSchedulerMetricsRegistry() {
-        return client.getSchedulerMetricsRegistry();
+    public SchedulerMetricsRegistry getMetricsRegistry() {
+        return client.getMetricsRegistry();
     }
 
     public void close() {

@@ -74,7 +74,6 @@ public class TaskFetchService implements StartPauseService {
                 )
                 .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, config.getPollingInterval()).scheduler(schedulers.getHousekeeperScheduler()))
                 .doOnError(throwable -> log.error("Unexpected exception on task fetch", throwable))
-                .retryWhen(Retry.indefinitely())
                 .subscribeOn(schedulers.getHousekeeperScheduler())
                 .subscribe(this::addToExecutor);
     }

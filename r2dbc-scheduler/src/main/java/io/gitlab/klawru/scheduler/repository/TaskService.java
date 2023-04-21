@@ -16,11 +16,11 @@
  */
 package io.gitlab.klawru.scheduler.repository;
 
+import io.gitlab.klawru.scheduler.TaskExample;
 import io.gitlab.klawru.scheduler.TaskResolver;
 import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.task.callback.ScheduleOnStartup;
 import io.gitlab.klawru.scheduler.task.instance.NextExecutionTime;
-import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
 import io.gitlab.klawru.scheduler.util.DataHolder;
 import reactor.core.publisher.Flux;
@@ -38,28 +38,21 @@ public interface TaskService extends Closeable {
 
     <T> Mono<Void> reschedule(Execution<T> execution, NextExecutionTime nextExecutionTime, DataHolder<T> newData);
 
-
     Flux<Execution<?>> lockAndGetDue(int limit);
 
     Mono<Void> remove(TaskInstanceId execution);
 
+    Mono<Integer> removeAllExecutions(String taskName);
+
     Mono<Boolean> updateHeartbeat(Execution<?> execution);
-
-    Mono<Integer> removeExecutions(String taskName);
-
-    Flux<Execution<?>> getAll();
 
     Mono<Integer> deleteUnresolvedTask(Duration deleteUnresolvedAfter);
 
     Mono<Long> rescheduleDeadExecutionTask(Duration durationNotUpdate);
 
-    <T> Mono<Execution<T>> findExecution(TaskInstance<T> taskInstanceId);
+    <T> Flux<Execution<T>> findExecutions(TaskExample<T> taskExample);
 
-    Mono<Execution<?>> findExecution(TaskInstanceId taskInstanceId);
-
-    Flux<Execution<?>> findExecution(boolean picked);
-
-    <T> Flux<Execution<T>> findExecution(String name, boolean picked, Class<T> dataClass);
+    <T> Mono<Long> countExecution(TaskExample<T> taskExample);
 
     TaskResolver getTaskResolver();
 

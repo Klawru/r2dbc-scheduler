@@ -151,33 +151,13 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     }
 
     @Override
-    public void detectDeadExecution() {
-        deadExecutionDetectService.detect();
+    public <T> Flux<Execution<T>> findExecutions(TaskExample<T> taskExample) {
+        return taskService.findExecutions(taskExample);
     }
 
     @Override
-    public Flux<Execution<?>> getAllExecution() {
-        return taskService.getAll();
-    }
-
-    @Override
-    public <T> Mono<Execution<T>> getExecution(TaskInstance<T> taskInstanceId) {
-        return taskService.findExecution(taskInstanceId);
-    }
-
-    @Override
-    public Mono<Execution<?>> getExecution(TaskInstanceId taskInstanceId) {
-        return taskService.findExecution(taskInstanceId);
-    }
-
-    @Override
-    public Flux<Execution<?>> getScheduledExecutions() {
-        return taskService.findExecution(false);
-    }
-
-    @Override
-    public <T> Flux<Execution<T>> getScheduledExecutionsForTask(String name, Class<T> dataClass) {
-        return taskService.findExecution(name, false, dataClass);
+    public <T> Mono<Long> countExecution(TaskExample<T> taskExample) {
+        return taskService.countExecution(taskExample);
     }
 
     @Override
@@ -193,6 +173,11 @@ public class DefaultSchedulerClient implements SchedulerClient, StartPauseServic
     @Override
     public SchedulerConfiguration getConfig() {
         return config;
+    }
+
+    @Override
+    public SchedulerMetricsRegistry getMetricsRegistry() {
+        return schedulerMetricsRegistry;
     }
 
     @Override

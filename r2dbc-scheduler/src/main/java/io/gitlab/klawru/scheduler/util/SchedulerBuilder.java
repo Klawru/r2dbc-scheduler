@@ -105,7 +105,7 @@ public class SchedulerBuilder {
         if (taskResolver != null) {
             taskResolver.add(tasks);
         } else {
-            taskResolver = new TaskResolver(tasks, schedulerMetricsRegistry, clock);
+            taskResolver = new TaskResolver(tasks, clock);
         }
         if (taskRepository == null) {
             taskRepository = new PostgresTaskRepository(r2dbcClient, config.getTableName());
