@@ -16,8 +16,8 @@
  */
 package io.gitlab.klawru.scheduler.repository.postgres;
 
+import io.gitlab.klawru.scheduler.TaskExample;
 import io.gitlab.klawru.scheduler.exception.RepositoryException;
-import io.gitlab.klawru.scheduler.r2dbc.PreparedStatementSetter;
 import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
 import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
 import io.gitlab.klawru.scheduler.repository.TaskRepository;
@@ -26,7 +26,6 @@ import io.gitlab.klawru.scheduler.util.DataHolder;
 import io.r2dbc.postgresql.codec.Json;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -46,7 +45,7 @@ public class PostgresTaskRepository implements TaskRepository {
 
     @Override
     public Mono<Void> createIfNotExists(TaskInstanceId instance, Instant executionTime, DataHolder<byte[]> data) {
-        return getExecution(instance)
+        return findExecution(instance)
                 .map(existingExecution -> false)
                 .switchIfEmpty(create(instance, executionTime, data))
                 .flatMap(created -> {
@@ -60,10 +59,10 @@ public class PostgresTaskRepository implements TaskRepository {
 
     protected Mono<Boolean> create(TaskInstanceId instance, Instant executionTime, DataHolder<byte[]> data) {
         return r2dbcClient.execute(
-                        "insert into " + tableName + " (task_name, task_instance, " +
+                        "INSERT INTO " + tableName + " (task_name, task_instance, " +
                                 (data.isPresent() ? "task_data, " : " ") +
                                 "execution_time, picked, version) " +
-                                "values(:taskName, :taskInstance, " +
+                                "VALUES (:taskName, :taskInstance, " +
                                 (data.isPresent() ? ":taskData, " : " ") +
                                 ":executionTime, :picked, :version)",
                         bindTarget -> {
@@ -153,41 +152,11 @@ public class PostgresTaskRepository implements TaskRepository {
     }
 
 
-    public Mono<ExecutionEntity> getExecution(TaskInstanceId taskInstance) {
-        return getExecution(taskInstance.getTaskName(), taskInstance.getId())
-                .doOnNext(executionEntity -> log.debug("getExecution:{}", executionEntity.getTaskNameId()));
-    }
-
-    @Override
-    public Flux<ExecutionEntity> getExecutions(@NotNull String taskName, boolean picked) {
-        return r2dbcClient.queryMany(
-                "select * from " + tableName + " " +
-                        "WHERE task_name = :taskName " +
-                        "AND picked = :picked ",
-                target -> target
-                        .bind("taskName", taskName)
-                        .bind("picked", picked),
-                ExecutionResultSetMapper.EXECUTION_MAPPER
-        );
-    }
-
-    @Override
-    public Flux<ExecutionEntity> getExecutionsForView(String name, boolean picked) {
-        return r2dbcClient.queryMany(
-                "select * from " + tableName + " " +
-                        "WHERE ( :taskName IS NULL OR task_name = :taskName) " +
-                        "AND ( :picked IS NULL OR picked = :picked) ",
-                target -> target
-                        .bind("taskName", name, String.class)
-                        .bind("picked", picked, Boolean.class),
-                ExecutionResultSetMapper.EXECUTION_MAPPER
-        );
-    }
-
-
-    public Mono<ExecutionEntity> getExecution(String taskName, String taskInstanceId) {
+    public Mono<ExecutionEntity> findExecution(TaskInstanceId taskInstance) {
+        String taskName = taskInstance.getTaskName();
+        String taskInstanceId = taskInstance.getId();
         return r2dbcClient.query(
-                        "select * from " + tableName + " where task_name = :taskName and task_instance = :taskInstance",
+                        "SELECT * FROM " + tableName + " WHERE task_name = :taskName AND task_instance = :taskInstance",
                         bindTarget -> bindTarget
                                 .bind("taskName", taskName)
                                 .bind("taskInstance", taskInstanceId),
@@ -201,11 +170,29 @@ public class PostgresTaskRepository implements TaskRepository {
     }
 
     @Override
-    public Flux<ExecutionEntity> getAll() {
-        return r2dbcClient.queryMany(
-                "select * from " + tableName + "",
-                PreparedStatementSetter.NO_BIND,
-                ExecutionResultSetMapper.EXECUTION_MAPPER
+    public <T> Flux<ExecutionEntity> findExecutions(TaskExample<T> taskExample) {
+        return r2dbcClient.queryMany("SELECT * FROM " + tableName + " " +
+                        "WHERE (:taskName IS NULL OR task_name = :taskName) " +
+                        "AND (:taskInstance IS NULL OR  task_instance = :taskInstance) " +
+                        "AND (:picked IS NULL OR picked = :picked)",
+                bindTarget -> bindTarget
+                        .bind("taskName", taskExample.getName(), String.class)
+                        .bind("taskInstance", taskExample.getId(), String.class)
+                        .bind("picked", taskExample.getPicked(), Boolean.class),
+                ExecutionResultSetMapper.EXECUTION_MAPPER);
+    }
+
+    @Override
+    public <T> Mono<Long> countExecutions(TaskExample<T> taskExample) {
+        return r2dbcClient.query("SELECT count(*) FROM " + tableName + " " +
+                        "WHERE (:taskName IS NULL OR task_name = :taskName) " +
+                        "AND (:taskInstance IS NULL OR  task_instance = :taskInstance) " +
+                        "AND (:picked IS NULL OR picked = :picked)",
+                bindTarget -> bindTarget
+                        .bind("taskName", taskExample.getName(), String.class)
+                        .bind("taskInstance", taskExample.getId(), String.class)
+                        .bind("picked", taskExample.getPicked(), Boolean.class),
+                row -> row.get(0, Long.class)
         );
     }
 
@@ -234,7 +221,7 @@ public class PostgresTaskRepository implements TaskRepository {
                                  Instant lastFailure,
                                  int consecutiveFailures) {
         return r2dbcClient.execute(
-                        "update " + tableName + " set " +
+                        "UPDATE " + tableName + " SET " +
                                 "picked = :picked, " +
                                 "picked_by = :picked_by, " +
                                 "last_heartbeat = :lastHeartbeat, " +
@@ -244,9 +231,9 @@ public class PostgresTaskRepository implements TaskRepository {
                                 "execution_time = :executionTime, " +
                                 (newData.isPresent() ? "task_data = :taskData, " : "") +
                                 "version = version + 1 " +
-                                "where task_name = :taskName " +
-                                "and task_instance = :taskInstance " +
-                                "and version = :version",
+                                "WHERE task_name = :taskName " +
+                                "AND task_instance = :taskInstance " +
+                                "AND version = :version",
                         bindTarget -> {
                             bindTarget
                                     .bind("picked", false)

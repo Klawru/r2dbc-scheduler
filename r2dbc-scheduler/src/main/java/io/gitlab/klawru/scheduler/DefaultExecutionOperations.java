@@ -17,7 +17,7 @@ package io.gitlab.klawru.scheduler;
 
 import io.gitlab.klawru.scheduler.exception.ExecutionException;
 import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
+import io.gitlab.klawru.scheduler.executor.execution.state.AbstractExecutionState;
 import io.gitlab.klawru.scheduler.repository.R2dbcTaskService;
 import io.gitlab.klawru.scheduler.repository.TaskService;
 import io.gitlab.klawru.scheduler.task.instance.NextExecutionTime;
@@ -57,7 +57,7 @@ public class DefaultExecutionOperations implements ExecutionOperations {
 
     @Override
     public <T> Mono<Void> reschedule(Execution<? super T> execution, NextExecutionTime nextExecutionTime) {
-        ExecutionState executionState = execution.currentState();
+        AbstractExecutionState executionState = execution.currentState();
         switch (executionState.getName()) {
             case VIEW:
             case FAILED:

@@ -18,7 +18,7 @@ package io.gitlab.klawru.scheduler.executor.execution.state;
 import lombok.ToString;
 
 @ToString(callSuper = true)
-public class DeadExecutionState extends ExecutionState {
+public class DeadExecutionState extends AbstractExecutionState {
 
     public DeadExecutionState() {
         super(ExecutionStateName.DEAD_EXECUTION);

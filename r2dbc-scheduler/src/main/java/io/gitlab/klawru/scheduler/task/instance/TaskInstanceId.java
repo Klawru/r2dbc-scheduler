@@ -38,7 +38,7 @@ public interface TaskInstanceId {
 
         @Override
         public String toString() {
-            return getTaskName();
+            return getTaskNameId();
         }
     }
 }

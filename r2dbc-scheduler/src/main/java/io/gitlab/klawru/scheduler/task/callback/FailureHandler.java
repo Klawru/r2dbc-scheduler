@@ -18,7 +18,7 @@ package io.gitlab.klawru.scheduler.task.callback;
 
 import io.gitlab.klawru.scheduler.ExecutionOperations;
 import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
+import io.gitlab.klawru.scheduler.executor.execution.state.AbstractExecutionState;
 import io.gitlab.klawru.scheduler.executor.execution.state.FailedState;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,7 @@ public interface FailureHandler<T> {
 
         @Override
         public Mono<Void> onFailure(Execution<? super T> execution, ExecutionOperations executionOperations) {
-            ExecutionState executionState = execution.currentState();
+            AbstractExecutionState executionState = execution.currentState();
             TaskInstance<? super T> taskInstance = execution.getTaskInstance();
             if (executionState instanceof FailedState) {
                 var failedState = (FailedState) executionState;
@@ -68,7 +68,7 @@ public interface FailureHandler<T> {
 
         @Override
         public Mono<Void> onFailure(Execution<? super T> execution, ExecutionOperations executionOperations) {
-            ExecutionState executionState = execution.currentState();
+            AbstractExecutionState executionState = execution.currentState();
             TaskInstance<? super T> taskInstance = execution.getTaskInstance();
             if (execution.getConsecutiveFailures() <= retry) {
                 Instant nextTime = executionState.getCreateTime().plus(duration);

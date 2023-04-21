@@ -24,7 +24,7 @@ import java.time.Instant;
 @Getter
 @RequiredArgsConstructor
 @ToString
-public abstract class ExecutionState {
+public abstract class AbstractExecutionState {
     protected final ExecutionStateName name;
     protected final Instant createTime = Instant.now();
 }

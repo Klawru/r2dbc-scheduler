@@ -121,11 +121,6 @@ public interface SchedulerClient extends StartPauseService, AutoCloseable {
     void fetchTask();
 
     /**
-     * Find tasks for which heartbeat has not been updated
-     */
-    void detectDeadExecution();
-
-    /**
      * Returns the number of running tasks
      *
      * @return number of running tasks
@@ -133,51 +128,28 @@ public interface SchedulerClient extends StartPauseService, AutoCloseable {
     int getCountProcessingTask();
 
     /**
-     * Returns a list of tasks from the queue
+     * Find a tasks by example
      *
-     * @return list of tasks from the queue
-     */
-    Flux<Execution<?>> getAllExecution();
-
-    /**
-     * Finds a task by its ID
-     *
-     * @param taskInstanceId task-instance
-     * @param <T>            type of task-data
+     * @param taskExample task-instance
+     * @param <T>         type of task-data
      * @return execution
      */
-    <T> Mono<Execution<T>> getExecution(TaskInstance<T> taskInstanceId);
+    <T> Flux<Execution<T>> findExecutions(TaskExample<T> taskExample);
 
     /**
-     * Finds a task by its ID
+     * Count a tasks by example
      *
-     * @param taskInstanceId task-instance
-     * @return execution by id
+     * @param taskExample task-instance
+     * @param <T>         type of task-data
+     * @return execution
      */
-    Mono<Execution<?>> getExecution(TaskInstanceId taskInstanceId);
-
-    /**
-     * Returns a list of tasks from the queue that have not yet been picked to work
-     *
-     * @return list of tasks from the queue
-     */
-    Flux<Execution<?>> getScheduledExecutions();
-
-    /**
-     * Finds all tasks with the specified name and type
-     *
-     * @param name      task name
-     * @param dataClass type of task-data
-     * @param <T>       type of task-data
-     * @return list of tasks
-     */
-    <T> Flux<Execution<T>> getScheduledExecutionsForTask(String name, Class<T> dataClass);
+    <T> Mono<Long> countExecution(TaskExample<T> taskExample);
 
     SchedulerClientStatus getCurrentStatus();
 
     SchedulerConfiguration getConfig();
 
-    SchedulerMetricsRegistry getSchedulerMetricsRegistry();
+    SchedulerMetricsRegistry getMetricsRegistry();
 
     @Override
     void close();

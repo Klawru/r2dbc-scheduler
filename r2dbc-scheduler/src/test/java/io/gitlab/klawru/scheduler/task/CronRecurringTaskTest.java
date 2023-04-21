@@ -19,7 +19,7 @@ package io.gitlab.klawru.scheduler.task;
 import io.gitlab.klawru.scheduler.AbstractPostgresTest;
 import io.gitlab.klawru.scheduler.SchedulerClient;
 import io.gitlab.klawru.scheduler.task.schedule.CronScheduler;
-import io.gitlab.klawru.scheduler.util.RecurringTaskBuilder;
+import io.gitlab.klawru.scheduler.util.Tasks;
 import io.gitlab.klawru.scheduler.util.TestTasks;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class CronRecurringTaskTest extends AbstractPostgresTest {
     void setUp() {
         countingHandler = new TestTasks.CountingHandler<>();
         CronScheduler everyMinute = new CronScheduler("0 * * * * *");
-        recurringTask = new RecurringTaskBuilder<>("recurringTask", Void.class, everyMinute)
+        recurringTask = Tasks.recurring("recurringTask", Void.class, everyMinute)
                 .execute(countingHandler);
         scheduler = schedulerFor(recurringTask);
     }

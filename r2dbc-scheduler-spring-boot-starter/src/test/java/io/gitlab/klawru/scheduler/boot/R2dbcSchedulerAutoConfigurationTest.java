@@ -88,10 +88,10 @@ class R2dbcSchedulerAutoConfigurationTest {
         contextRunner
                 .withPropertyValues("management.health.r2dbc-scheduler.enabled=false")
                 .run(context -> {
-            assertThat(context)
-                    .hasNotFailed()
-                    .doesNotHaveBean(SchedulerClientHealthIndicator.class);
-        });
+                    assertThat(context)
+                            .hasNotFailed()
+                            .doesNotHaveBean(SchedulerClientHealthIndicator.class);
+                });
     }
 
     @Test
@@ -142,8 +142,9 @@ class R2dbcSchedulerAutoConfigurationTest {
 
             @Override
             public byte @Nullable [] serialize(@Nullable Object data) {
-                if (data == null)
+                if (data == null) {
                     return null;
+                }
                 try {
                     return defaultSerializer.serializeToByteArray(data);
                 } catch (IOException e) {
@@ -153,8 +154,9 @@ class R2dbcSchedulerAutoConfigurationTest {
 
             @Override
             public <T> T deserialize(Class<T> clazz, byte[] serializedData) {
-                if (serializedData == null)
+                if (serializedData == null) {
                     return null;
+                }
                 try {
                     return clazz.cast(defaultDeserializer.deserialize(new ByteArrayInputStream(serializedData)));
                 } catch (IOException e) {

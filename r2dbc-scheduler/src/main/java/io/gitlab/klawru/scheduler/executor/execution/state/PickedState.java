@@ -18,7 +18,7 @@ package io.gitlab.klawru.scheduler.executor.execution.state;
 import lombok.ToString;
 
 @ToString(callSuper = true)
-public class PickedState extends ExecutionState {
+public class PickedState extends AbstractExecutionState {
     public PickedState() {
         super(ExecutionStateName.PICKED);
     }

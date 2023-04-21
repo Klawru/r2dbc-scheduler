@@ -16,107 +16,91 @@
 
 package io.gitlab.klawru.scheduler.service;
 
-import io.gitlab.klawru.scheduler.AbstractPostgresTest;
-import io.gitlab.klawru.scheduler.SchedulerClient;
-import io.gitlab.klawru.scheduler.TaskResolver;
-import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
-import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
-import io.gitlab.klawru.scheduler.repository.postgres.PostgresTaskRepository;
-import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
-import io.gitlab.klawru.scheduler.task.OneTimeTask;
-import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
-import io.gitlab.klawru.scheduler.util.DataHolder;
-import io.gitlab.klawru.scheduler.util.SchedulerBuilder;
-import io.gitlab.klawru.scheduler.util.Tasks;
-import io.gitlab.klawru.scheduler.util.TestTasks;
-import io.r2dbc.spi.ConnectionFactory;
-import org.awaitility.Awaitility;
+import io.gitlab.klawru.scheduler.config.SchedulerConfiguration;
+import io.gitlab.klawru.scheduler.executor.DefaultTaskSchedulers;
+import io.gitlab.klawru.scheduler.repository.TaskService;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.r2dbc.core.DatabaseClient;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.atLeast;
 
-class DeleteUnresolvedTaskServiceTest extends AbstractPostgresTest {
-    final Duration deleteUnresolvedAfter = Duration.ofDays(1);
+@Slf4j
+class DeleteUnresolvedTaskServiceTest {
+    Duration pollingInterval = Duration.ofSeconds(1);
+    Duration deleteUnresolvedAfter = Duration.ofDays(1);
 
-    SchedulerClient client;
-    PostgresTaskRepository repository;
-    TaskResolver taskResolver;
-
-    OneTimeTask<Void> taskA;
-    OneTimeTask<Void> taskUnresolved;
+    VirtualTimeScheduler virtualTimeScheduler;
+    TaskService mockTaskService;
+    DeleteUnresolvedTaskService deleteUnresolvedTaskService;
 
     @BeforeEach
     void setUp() {
-        taskA = Tasks.oneTime("taskA")
-                .execute(new TestTasks.CountingHandler<>());
-        taskUnresolved = Tasks.oneTime("taskUnresolved")
-                .execute(new TestTasks.CountingHandler<>());
-
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        SchedulerMetricsRegistry statRegistry = new SchedulerMetricsRegistry();
-        repository = Mockito.spy(new PostgresTaskRepository(new R2dbcClient(DatabaseClient.create(connectionFactory)),
-                "scheduled_job"));
-        taskResolver = Mockito.spy(new TaskResolver(List.of(), statRegistry, testClock));
-        client = SchedulerBuilder.create(connectionFactory, taskA)
-                .clock(testClock)
-                .schedulerMetricsRegistry(statRegistry)
-                .taskResolver(taskResolver)
-                .taskRepository(repository)
-                .schedulerConfig(configBuilder -> configBuilder
-                        .schedulerName("test-scheduler")
-                        .deleteUnresolvedAfter(deleteUnresolvedAfter)
-                        .pollingInterval(Duration.ofSeconds(1)))
+        SchedulerConfiguration configuration = SchedulerConfiguration.builder()
+                .deleteUnresolvedInterval(pollingInterval)
+                .deleteUnresolvedAfter(deleteUnresolvedAfter)
+                .schedulerName("UpdateHeartbeatServiceTest")
                 .build();
 
+        virtualTimeScheduler = VirtualTimeScheduler.getOrSet();
+        DefaultTaskSchedulers taskSchedulers = new DefaultTaskSchedulers(2, 2,
+                2,
+                virtualTimeScheduler,
+                virtualTimeScheduler);
+        mockTaskService = Mockito.mock(TaskService.class);
+        deleteUnresolvedTaskService = new DeleteUnresolvedTaskService(mockTaskService, taskSchedulers, configuration);
     }
 
-    @AfterEach
-    void tearDown() {
-        Optional.ofNullable(client).ifPresent(SchedulerClient::close);
+    @AfterAll
+    static void tearDown() {
+        VirtualTimeScheduler.reset();
     }
 
-    @RepeatedTest(4)
+    @Test
     void removeOldUnresolvedTask() {
-        TaskInstance<Void> taskUnresolvedA1 = taskUnresolved.instance("unresolved");
-        Instant deleteUnresolvedTime = testClock.now().minus(deleteUnresolvedAfter.plusSeconds(10));
-        //save task to DB
-        repository.createIfNotExists(taskUnresolvedA1, deleteUnresolvedTime, DataHolder.empty()).block();
-        //check a task in table
-        var all = repository.getAll().collectList().block();
-        assertThat(all)
-                .hasSize(1)
-                .first()
-                .returns(taskUnresolvedA1.getTaskName(), ExecutionEntity::getTaskName)
-                .returns(taskUnresolvedA1.getId(), ExecutionEntity::getId);
-        //Start the client for found 'taskUnresolved'
-        client.start();
-        Mockito.verify(taskResolver, timeout(Duration.ofSeconds(10).toMillis()))
-                .findTask("taskUnresolved");
-        client.pause();
-        //When
-        //Start DeleteUnresolvedTaskService
-        client.start();
+        Mockito.when(mockTaskService.deleteUnresolvedTask(any())).thenReturn(Mono.just(1));
         //Then
-        Mockito.verify(repository, timeout(Duration.ofSeconds(10).toMillis()).atLeast(1))
-                .removeOldUnresolvedTask(anyCollection(), any(Instant.class));
-        Awaitility.await("Delete from table").atMost(10, TimeUnit.SECONDS)
-                .until(() -> repository.getAll().count()
-                        .map(executionEntities -> executionEntities == 0)
-                        .blockOptional().orElse(false));
-        all = repository.getAll().collectList().block();
-        assertThat(all).isEmpty();
+        StepVerifier.withVirtualTime(() -> deleteUnresolvedTaskService.getDeleteUnresolvedTaskFlux().log(log.getName()), 4)
+                .expectSubscription()
+                .expectNoEvent(pollingInterval)
+                .expectNext(1)
+                .expectNoEvent(pollingInterval)
+                .expectNext(1)
+                .thenCancel()
+                .verify(pollingInterval.multipliedBy(10));
+    }
+
+    @Test
+    void start() {
+        Mockito.when(mockTaskService.deleteUnresolvedTask(any())).thenReturn(Mono.just(1));
+        //When
+        deleteUnresolvedTaskService.start();
+        virtualTimeScheduler.advanceTimeBy(pollingInterval.multipliedBy(2));
+        //Then
+        Mockito.verify(mockTaskService, atLeast(1)).deleteUnresolvedTask(any());
+        deleteUnresolvedTaskService.pause();
+    }
+
+    @Test
+    void pause() {
+        Mockito.when(mockTaskService.deleteUnresolvedTask(any())).thenReturn(Mono.just(1));
+        //When
+        deleteUnresolvedTaskService.start();
+        virtualTimeScheduler.advanceTimeBy(pollingInterval);
+        deleteUnresolvedTaskService.pause();
+        Mockito.reset(mockTaskService);
+        virtualTimeScheduler.advanceTimeBy(pollingInterval.multipliedBy(2));
+        //Then
+        Mockito.verify(mockTaskService, Mockito.timeout(pollingInterval.toMillis()).times(0)).updateHeartbeat(any());
     }
 }

@@ -40,7 +40,7 @@ public class UpdateHeartbeatService implements StartPauseService {
     private final TaskSchedulers schedulers;
     private final TaskService taskService;
 
-    private Disposable startUpdateHeartbeatsStream = AlwaysDisposed.of();
+    private Disposable startUpdateHeartbeatsStream = AlwaysDisposed.get();
 
     public UpdateHeartbeatService(TaskService taskService,
                                   TaskExecutor executor,
@@ -56,32 +56,37 @@ public class UpdateHeartbeatService implements StartPauseService {
     public void start() {
         if (this.startUpdateHeartbeatsStream.isDisposed()) {
             log.debug("Start update heartbeats");
-            this.startUpdateHeartbeatsStream = Flux.defer(() -> {
-                        var currentlyProcessing = executor.currentlyExecuting();
-                        return Flux.fromStream(currentlyProcessing)
-                                .concatMap(this::updateHeartBeat)
-                                .doOnError(throwable -> log.error("Failed while updating heartbeat for execution. Will try again later.", throwable));
-                    })
-                    .doOnError(throwable -> log.error("Failed while updating heartbeat. Will try again later", throwable))
-                    .repeatWhen(longFlux -> longFlux.delayElements(config.getHeartbeatInterval(), schedulers.getHousekeeperScheduler()))
-                    .doOnError(throwable -> log.error("Unexpected exception while updating heartbeat", throwable))
-                    .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, config.getHeartbeatInterval()))
-                    .subscribeOn(schedulers.getHousekeeperScheduler())
+            this.startUpdateHeartbeatsStream = updatingHeartbeatFlux()
                     .subscribe();
         }
     }
 
     @NotNull
-    private Mono<Void> updateHeartBeat(Execution<?> execution) {
-        return taskService.updateHeartbeat(execution)
-                .filter(updated -> !updated)
-                .doOnNext(aFalse -> {
-                    log.info("Task '{}:{}' was stopped because the heartBeate could not be updated. " +
-                                    "Task has been removed from the repository",
-                            execution.getTaskInstance().getTaskName(), execution.getTaskInstance().getId());
-                    executor.removeFromQueue(execution);
+    protected Flux<Boolean> updatingHeartbeatFlux() {
+        return Flux.defer(() -> {
+                    var currentlyProcessing = executor.currentlyExecuting();
+                    return Flux.fromStream(currentlyProcessing)
+                            .concatMap(this::updateHeartBeat)
+                            .doOnError(throwable -> log.error("Failed while updating heartbeat for execution. Will try again later.", throwable));
                 })
-                .then();
+                .doOnError(throwable -> log.error("Failed while updating heartbeat. Will try again later", throwable))
+                .repeatWhen(longFlux -> longFlux.delayElements(config.getHeartbeatInterval(), schedulers.getHousekeeperScheduler()))
+                .doOnError(throwable -> log.error("Unexpected exception while updating heartbeat", throwable))
+                .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, config.getHeartbeatInterval()).scheduler(schedulers.getHousekeeperScheduler()))
+                .subscribeOn(schedulers.getHousekeeperScheduler());
+    }
+
+    @NotNull
+    private Mono<Boolean> updateHeartBeat(Execution<?> execution) {
+        return taskService.updateHeartbeat(execution)
+                .doOnNext(updated -> {
+                    if (Boolean.FALSE.equals(updated)) {
+                        log.info("Task '{}:{}' was stopped because the heartBeate could not be updated. " +
+                                        "Task has been removed from the repository",
+                                execution.getTaskInstance().getTaskName(), execution.getTaskInstance().getId());
+                        executor.removeFromQueue(execution);
+                    }
+                });
     }
 
 

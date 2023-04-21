@@ -19,18 +19,15 @@ package io.gitlab.klawru.scheduler;
 import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.task.ExecutionHandler;
 import io.gitlab.klawru.scheduler.task.OneTimeTask;
-import io.gitlab.klawru.scheduler.task.RecurringTask;
+import io.gitlab.klawru.scheduler.task.callback.FailureHandler;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
-import io.gitlab.klawru.scheduler.task.schedule.CronScheduler;
-import io.gitlab.klawru.scheduler.util.OneTimeTaskBuilder;
-import io.gitlab.klawru.scheduler.util.RecurringTaskBuilder;
+import io.gitlab.klawru.scheduler.util.Tasks;
 import io.gitlab.klawru.scheduler.util.TestTasks;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -56,21 +53,10 @@ class SchedulerClientTest extends AbstractPostgresTest {
     private ExecutionHandler<String> errorHandler;
     private OneTimeTask<String> errorTask;
 
+    private OneTimeTask<String> errorTaskRemoveAfterError;
+
     @BeforeEach
     void setUp() {
-        OneTimeTask<String> task = new OneTimeTaskBuilder<>("taskName", String.class)
-                .execute((taskInstance, context) -> Mono.fromRunnable(() -> {
-                    String data = taskInstance.getData();
-                    log.info(data);
-                }));
-
-        RecurringTask<Integer> everyHourTask = new RecurringTaskBuilder<>("everyHourTask", Integer.class, new CronScheduler("0 0 * * * *"))
-                .initData(1)
-                .execute((taskInstance, context) -> Mono.fromCallable(() -> {
-                    Integer data = taskInstance.getData();
-                    log.info("currentRun {}", data);
-                    return data + 1;
-                }));
         taskHandlerA = new TestTasks.CountingHandler<>();
         taskA = TestTasks.oneTime("taskA", taskHandlerA);
 
@@ -87,8 +73,11 @@ class SchedulerClientTest extends AbstractPostgresTest {
             throw new RuntimeException("Task exception");
         };
         errorTask = TestTasks.oneTimeWithType("errorTask", String.class, errorHandler);
+        errorTaskRemoveAfterError = Tasks.oneTime("errorTaskThenRemove", String.class)
+                .onFailure(new FailureHandler.OnFailureRemove<>())
+                .execute(errorHandler);
 
-        var client = schedulerFor(taskA, taskB, scheduleAnotherTask, savingTask, errorTask);
+        var client = schedulerFor(taskA, taskB, scheduleAnotherTask, savingTask, errorTask, errorTaskRemoveAfterError);
         scheduler = new TaskScheduler(client);
     }
 
@@ -226,7 +215,7 @@ class SchedulerClientTest extends AbstractPostgresTest {
         TaskInstance<String> taskInstance = errorTask.instance("5", "data");
         scheduler.schedule(errorTask.instance("5", "data"), testClock.now());
         wailAllExecutionDone();
-        Assertions.assertThat(scheduler.getAllExecution())
+        Assertions.assertThat(scheduler.findExecution(TaskExample.all()))
                 .hasSize(1)
                 .first()
                 .returns(taskInstance.getTaskName(), execution -> execution.getTaskInstance().getTaskName())
@@ -238,6 +227,14 @@ class SchedulerClientTest extends AbstractPostgresTest {
     }
 
     @Test
+    void removeWhenError() {
+        TaskInstance<String> taskInstance = errorTaskRemoveAfterError.instance("5", "data");
+        scheduler.schedule(taskInstance);
+        wailAllExecutionDone();
+        Assertions.assertThat(scheduler.findExecution(TaskExample.all())).isEmpty();
+    }
+
+    @Test
     void scheduleMultipleTaskTest() {
         scheduler.schedule(taskA.instance("5"), testClock.now().plusSeconds(10));
         scheduler.schedule(taskA.instance("6"), testClock.now().plusSeconds(10));
@@ -245,28 +242,28 @@ class SchedulerClientTest extends AbstractPostgresTest {
         scheduler.schedule(taskB.instance("18"), testClock.now().plusSeconds(10));
         scheduler.schedule(taskB.instance("19"), testClock.now().plusSeconds(10));
 
-        Assertions.assertThat(scheduler.getAllExecution()).hasSize(5);
-        Assertions.assertThat(scheduler.getScheduledExecutions()).hasSize(5);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.all())).hasSize(5);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.scheduled())).hasSize(5);
         assertThat(countExecutionsForTask(scheduler, taskA.getName(), Void.class)).isEqualTo(2);
         assertThat(countExecutionsForTask(scheduler, taskB.getName(), Void.class)).isEqualTo(3);
-        Assertions.assertThat(scheduler.getScheduledExecutionsForTask(taskB.getName(), Void.class)).hasSize(3);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.scheduled(taskB.getName(), Void.class))).hasSize(3);
     }
 
     @Test
     void getExecutionTest() {
         scheduler.schedule(taskA.instance("1"), testClock.now().plusSeconds(10));
 
-        Assertions.assertThat(scheduler.getExecution(taskA.instance("1"))).isPresent();
-        Assertions.assertThat(scheduler.getExecution(taskA.instance("2"))).isEmpty();
-        Assertions.assertThat(scheduler.getExecution(taskB.instance("1"))).isEmpty();
+        Assertions.assertThat(scheduler.findExecution(TaskExample.of(taskA.instance("1")))).hasSize(1);
+        Assertions.assertThat(scheduler.findExecution(TaskExample.of(taskA.instance("2")))).isEmpty();
+        Assertions.assertThat(scheduler.findExecution(TaskExample.of(taskB.instance("1")))).isEmpty();
     }
 
     private void wailAllExecutionDone() {
         wailAllExecutionDone(scheduler.getClient());
     }
 
-    private <T> int countExecutionsForTask(TaskScheduler client, String taskName, Class<T> dataClass) {
-        return client.getScheduledExecutionsForTask(taskName, dataClass).size();
+    private <T> long countExecutionsForTask(TaskScheduler client, String taskName, Class<T> dataClass) {
+        return client.countExecution(TaskExample.scheduled(taskName, dataClass));
     }
 
 

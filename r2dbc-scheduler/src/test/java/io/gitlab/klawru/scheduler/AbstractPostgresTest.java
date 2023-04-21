@@ -38,6 +38,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Duration;
+
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
@@ -117,6 +119,7 @@ public abstract class AbstractPostgresTest {
                 .schedulerConfig(schedulerConfigBuilder -> schedulerConfigBuilder
                         .schedulerName(name)
                         .threads(2)
+                        .heartbeatInterval(Duration.ofSeconds(5))
                 )
                 .schedulerMetricsRegistry(metricsRegistry)
                 .clock(testClock)

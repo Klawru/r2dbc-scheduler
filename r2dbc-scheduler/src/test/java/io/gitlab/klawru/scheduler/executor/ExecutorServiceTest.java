@@ -51,7 +51,7 @@ import static org.mockito.Mockito.timeout;
 
 class ExecutorServiceTest {
 
-    ExecutorService executorService;
+    TaskExecutorService executorService;
     TaskSchedulers taskSchedulers;
     SchedulerMetricsRegistry metricsRegistry;
     SchedulerClient mockSchedulerClient = Mockito.mock(SchedulerClient.class);
@@ -68,7 +68,7 @@ class ExecutorServiceTest {
                 .threads(1)
                 .build());
         metricsRegistry = new SchedulerMetricsRegistry();
-        executorService = new ExecutorService(taskSchedulers, metricsRegistry);
+        executorService = new TaskExecutorService(taskSchedulers, metricsRegistry);
     }
 
     @AfterEach

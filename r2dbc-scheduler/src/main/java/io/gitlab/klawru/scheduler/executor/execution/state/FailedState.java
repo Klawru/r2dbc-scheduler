@@ -19,7 +19,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString(callSuper = true)
-public class FailedState extends ExecutionState {
+public class FailedState extends AbstractExecutionState {
     @Getter
     private final Throwable cause;
 
