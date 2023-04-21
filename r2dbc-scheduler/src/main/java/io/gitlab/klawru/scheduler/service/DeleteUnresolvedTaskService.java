@@ -22,8 +22,9 @@ import io.gitlab.klawru.scheduler.executor.TaskSchedulers;
 import io.gitlab.klawru.scheduler.repository.TaskService;
 import io.gitlab.klawru.scheduler.util.AlwaysDisposed;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import reactor.core.Disposable;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
@@ -43,23 +44,29 @@ public class DeleteUnresolvedTaskService implements StartPauseService {
         this.taskService = taskService;
         this.schedulers = schedulers;
         this.config = config;
-        this.subscription = AlwaysDisposed.of();
+        this.subscription = AlwaysDisposed.get();
     }
 
     @Override
     public void start() {
         if (subscription.isDisposed()) {
             log.debug("Start delete unresolved task");
-            Duration pollingInterval = config.getPollingInterval().multipliedBy(10);
-            this.subscription = taskService.deleteUnresolvedTask(config.getDeleteUnresolvedAfter())
-                    .doOnNext(deleted -> log.debug("removed by delete unresolved task count={}", deleted))
-                    .doOnError(throwable -> log.error("Exception on delete unresolved task", throwable))
-                    .repeatWhen(longFlux -> Mono.delay(pollingInterval, schedulers.getHousekeeperScheduler()))
-                    .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, pollingInterval).scheduler(schedulers.getHousekeeperScheduler()))
-                    .doOnError(throwable -> log.warn("Unexpected exception on delete unresolved task.", throwable))
-                    .subscribeOn(schedulers.getHousekeeperScheduler())
+            this.subscription = getDeleteUnresolvedTaskFlux()
                     .subscribe();
         }
+    }
+
+    @NotNull
+    protected Flux<Integer> getDeleteUnresolvedTaskFlux() {
+        Duration pollingInterval = config.getDeleteUnresolvedInterval();
+        Duration deleteUnresolvedInterval = config.getDeleteUnresolvedAfter();
+        return taskService.deleteUnresolvedTask(deleteUnresolvedInterval)
+                .doOnNext(deleted -> log.debug("removed by delete unresolved task count={}", deleted))
+                .doOnError(throwable -> log.error("Exception on delete unresolved task", throwable))
+                .repeatWhen(countFlux ->  countFlux.delayElements(pollingInterval, schedulers.getHousekeeperScheduler()))
+                .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, pollingInterval).scheduler(schedulers.getHousekeeperScheduler()))
+                .doOnError(throwable -> log.warn("Unexpected exception on delete unresolved task.", throwable))
+                .subscribeOn(schedulers.getHousekeeperScheduler());
     }
 
     @Override

@@ -19,7 +19,7 @@ package io.gitlab.klawru.scheduler.executor;
 import io.gitlab.klawru.scheduler.ExecutionOperations;
 import io.gitlab.klawru.scheduler.exception.AbstractSchedulerException;
 import io.gitlab.klawru.scheduler.executor.execution.state.EnqueuedState;
-import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
+import io.gitlab.klawru.scheduler.executor.execution.state.AbstractExecutionState;
 import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import io.gitlab.klawru.scheduler.task.AbstractTask;
 import io.gitlab.klawru.scheduler.task.ExecutionContext;
@@ -46,7 +46,7 @@ import static io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState
 
 @Slf4j
 @RequiredArgsConstructor
-public class ExecutorService implements TaskExecutor {
+public class TaskExecutorService implements TaskExecutor {
     private final TaskSchedulers schedulers;
     private final SchedulerMetricsRegistry registry;
 
@@ -57,7 +57,7 @@ public class ExecutorService implements TaskExecutor {
     @Override
     public <T> void addToQueue(Execution<T> execution, ExecutionContext<T> context, ExecutionOperations executionOperations) {
         TaskInstance<T> taskInstance = execution.getTaskInstance();
-        log.debug("Add queue task {}", taskInstance);
+        log.debug("Add a task {} to the queue", taskInstance);
         ExecutionSubscriber executionSubscriber = addCurrentlyProcessing(execution);
         Mono.defer(() -> {
                     execution.processed();
@@ -79,9 +79,9 @@ public class ExecutorService implements TaskExecutor {
     }
 
     private void stopExecution(Execution<?> execution) {
-        Optional<ExecutionState> lastState = execution.getLastState(ENQUEUED);
+        Optional<AbstractExecutionState> lastState = execution.getLastState(ENQUEUED);
         if (lastState.isPresent()) {
-            ExecutionState executionState = lastState.get();
+            AbstractExecutionState executionState = lastState.get();
             UUID enqueuedId = ((EnqueuedState) executionState).getEnqueuedId();
             Pair<Execution<?>, ExecutionSubscriber> executionSubscriberPair = currentlyProcessing.get(enqueuedId);
             ExecutionSubscriber subscriber = executionSubscriberPair.getSecond();

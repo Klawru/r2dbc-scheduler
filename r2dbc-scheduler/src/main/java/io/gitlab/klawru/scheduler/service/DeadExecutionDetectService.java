@@ -23,11 +23,13 @@ import io.gitlab.klawru.scheduler.repository.TaskService;
 import io.gitlab.klawru.scheduler.util.AlwaysDisposed;
 import io.gitlab.klawru.scheduler.util.Trigger;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -45,7 +47,7 @@ public class DeadExecutionDetectService implements StartPauseService {
         this.taskService = taskService;
         this.schedulers = schedulers;
         this.config = config;
-        this.deadExecutionDetectDisposable = AlwaysDisposed.of();
+        this.deadExecutionDetectDisposable = AlwaysDisposed.get();
         this.trigger = new Trigger();
     }
 
@@ -53,23 +55,28 @@ public class DeadExecutionDetectService implements StartPauseService {
     public void start() {
         if (deadExecutionDetectDisposable.isDisposed()) {
             log.debug("Start dead execution detect");
-            this.deadExecutionDetectDisposable = taskService.deleteUnresolvedTask(config.getDeleteUnresolvedAfter())
-                    .doOnNext(deleted -> log.trace("removed by removeOldUnresolvedTask count={}", deleted))
-                    .doOnError(throwable -> log.error("Exception on delete unresolved task", throwable))
-                    .then(taskService.rescheduleDeadExecutionTask(config.getHeartbeatInterval().multipliedBy(4))
-                            .doOnError(throwable -> log.error("Exception on reschedule dead execution", throwable))
-                    )
-                    .repeatWhen(longFlux -> longFlux.flatMap(aLong -> Flux.firstWithSignal(
-                            Mono.delay(config.getPollingInterval().multipliedBy(2),
-                                    schedulers.getHousekeeperScheduler())))
-                    )
-                    .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, config.getPollingInterval())
-                            .scheduler(schedulers.getHousekeeperScheduler())
-                    )
-                    .doOnError(throwable -> log.error("Unexpected exception in 'deadExecutionDetect'. Restart subscription", throwable))
-                    .subscribeOn(schedulers.getHousekeeperScheduler())
+            this.deadExecutionDetectDisposable = getRescheduleDeadExecutionFlux()
                     .subscribe();
         }
+    }
+
+    @NotNull
+    protected Flux<Long> getRescheduleDeadExecutionFlux() {
+        Duration deadExecutionDuration = config.getHeartbeatInterval().multipliedBy(4);
+        Duration polingInterval = config.getPollingInterval().multipliedBy(2);
+
+        return taskService.rescheduleDeadExecutionTask(deadExecutionDuration)
+                .log(this.getClass().getName())
+                .doOnError(throwable -> log.error("Exception on reschedule dead execution", throwable))
+                .repeatWhen(countFlux -> countFlux.delayUntil(aLong -> Flux.firstWithSignal(
+                        Mono.delay(polingInterval, schedulers.getHousekeeperScheduler()),
+                        trigger.getFlux()).log("signal"))
+                )
+                .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, polingInterval)
+                        .scheduler(schedulers.getHousekeeperScheduler())
+                )
+                .doOnError(throwable -> log.error("Unexpected exception in 'deadExecutionDetect'. Restart subscription", throwable))
+                .subscribeOn(schedulers.getHousekeeperScheduler());
     }
 
     @Override

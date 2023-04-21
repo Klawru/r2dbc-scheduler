@@ -17,6 +17,7 @@
 package io.gitlab.klawru.scheduler.task.schedule;
 
 import io.gitlab.klawru.scheduler.SchedulerClient;
+import io.gitlab.klawru.scheduler.TaskExample;
 import io.gitlab.klawru.scheduler.executor.Execution;
 import io.gitlab.klawru.scheduler.task.RecurringTask;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
@@ -43,11 +44,13 @@ public class ScheduleRecurringOnStartUp<T> {
         TaskInstance<T> taskInstance = task.instance(instance);
         if (schedule.isDisabled()) {
             log.info("Task {} marked as disabled", taskInstance.getTaskNameId());
-            return client.getExecution(taskInstance)
+            return client.findExecutions(TaskExample.of(taskInstance))
+                    .singleOrEmpty()
                     .doOnNext(tExecution -> log.info("The task {} will be disabled", taskInstance.getTaskNameId()))
                     .flatMap((Execution<T> e) -> client.cancel(e.getTaskInstance()));
         } else {
-            return client.getExecution(taskInstance)
+            return client.findExecutions(TaskExample.of(taskInstance))
+                    .singleOrEmpty()
                     .as(MapperUtil::mapToOptional)
                     .flatMap(executionOptional -> {
                         if (executionOptional.isEmpty()) {

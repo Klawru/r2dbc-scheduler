@@ -17,7 +17,7 @@
 package io.gitlab.klawru.scheduler.repository;
 
 import io.gitlab.klawru.scheduler.executor.Execution;
-import io.gitlab.klawru.scheduler.executor.execution.state.ExecutionState;
+import io.gitlab.klawru.scheduler.executor.execution.state.AbstractExecutionState;
 import io.gitlab.klawru.scheduler.task.AbstractTask;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstance;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +29,7 @@ public class ExecutionMapper {
 
     @NotNull
     public <T> Execution<T> mapToExecution(ExecutionEntity executionEntity,
-                                           ExecutionState state,
+                                           AbstractExecutionState state,
                                            AbstractTask<T> abstractTask,
                                            Supplier<T> dataSupplier) {
         TaskInstance<T> taskInstance = abstractTask.instance(executionEntity.getInstanceId(), dataSupplier);

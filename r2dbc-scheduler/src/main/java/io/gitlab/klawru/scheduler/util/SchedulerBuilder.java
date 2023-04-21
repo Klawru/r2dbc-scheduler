@@ -22,7 +22,7 @@ import io.gitlab.klawru.scheduler.TaskResolver;
 import io.gitlab.klawru.scheduler.config.SchedulerConfiguration;
 import io.gitlab.klawru.scheduler.config.SchedulerConfiguration.SchedulerConfigurationBuilder;
 import io.gitlab.klawru.scheduler.executor.DefaultTaskSchedulers;
-import io.gitlab.klawru.scheduler.executor.ExecutorService;
+import io.gitlab.klawru.scheduler.executor.TaskExecutorService;
 import io.gitlab.klawru.scheduler.executor.TaskExecutor;
 import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
 import io.gitlab.klawru.scheduler.repository.ExecutionMapper;
@@ -105,7 +105,7 @@ public class SchedulerBuilder {
         if (taskResolver != null) {
             taskResolver.add(tasks);
         } else {
-            taskResolver = new TaskResolver(tasks, schedulerMetricsRegistry, clock);
+            taskResolver = new TaskResolver(tasks, clock);
         }
         if (taskRepository == null) {
             taskRepository = new PostgresTaskRepository(r2dbcClient, config.getTableName());
@@ -123,7 +123,7 @@ public class SchedulerBuilder {
             taskSchedulers = new DefaultTaskSchedulers(config);
         }
         if (executor == null) {
-            executor = new ExecutorService(taskSchedulers, schedulerMetricsRegistry);
+            executor = new TaskExecutorService(taskSchedulers, schedulerMetricsRegistry);
         }
         return new DefaultSchedulerClient(taskService, executor, taskSchedulers, schedulerMetricsRegistry, config, clock);
     }

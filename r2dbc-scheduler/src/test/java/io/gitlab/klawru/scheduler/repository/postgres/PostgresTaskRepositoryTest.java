@@ -17,6 +17,7 @@
 package io.gitlab.klawru.scheduler.repository.postgres;
 
 import io.gitlab.klawru.scheduler.AbstractPostgresTest;
+import io.gitlab.klawru.scheduler.TaskExample;
 import io.gitlab.klawru.scheduler.exception.RepositoryException;
 import io.gitlab.klawru.scheduler.r2dbc.R2dbcClient;
 import io.gitlab.klawru.scheduler.repository.ExecutionEntity;
@@ -154,7 +155,7 @@ class PostgresTaskRepositoryTest extends AbstractPostgresTest {
         TaskInstance<Void> instanceA = taskA.instance("1");
         saveTask(instanceA, testClock.now(), DataHolder.empty());
         //When
-        List<Integer> updated = taskRepository.getAll()
+        List<Integer> updated = taskRepository.findExecutions(TaskExample.all())
                 .flatMap(executionEntity -> {
                     TaskInstanceId taskInstanceId = TaskInstanceId.of(executionEntity.getTaskName(), executionEntity.getId());
                     return taskRepository.updateHeartbeat(taskInstanceId, executionEntity.getVersion(), testClock.now());
@@ -173,7 +174,7 @@ class PostgresTaskRepositoryTest extends AbstractPostgresTest {
         byte[] data = "\"TestData\"".getBytes(StandardCharsets.UTF_8);
         saveTask(instanceB, testClock.now(), DataHolder.of(data));
         //When
-        var execution = taskRepository.getExecution(instanceB).block();
+        var execution = taskRepository.findExecution(instanceB).block();
         //Then
         Assertions.assertThat(execution)
                 .usingRecursiveComparison(recursiveConfiguration)
@@ -192,62 +193,13 @@ class PostgresTaskRepositoryTest extends AbstractPostgresTest {
     }
 
     @Test
-    void getExecutionByNameId() {
+    void findExecutions() {
         TaskInstance<String> instanceB = taskB.instance("1");
         byte[] data = "\"TestData\"".getBytes(StandardCharsets.UTF_8);
         saveTask(instanceB, testClock.now(), DataHolder.of(data));
         //When
-        var execution = taskRepository.getExecution(instanceB.getTaskName(), instanceB.getId()).block();
-        //Then
-        Assertions.assertThat(execution)
-                .usingRecursiveComparison(recursiveConfiguration)
-                .isEqualTo(new ExecutionEntity(instanceB.getTaskName(),
-                        instanceB.getId(),
-                        data,
-                        testClock.now(),
-                        false,
-                        null,
-                        null,
-                        null,
-                        0,
-                        null,
-                        1
-                ));
-    }
-
-    @Test
-    void getExecutions() {
-        TaskInstance<String> instanceB = taskB.instance("1");
-        byte[] data = "\"TestData\"".getBytes(StandardCharsets.UTF_8);
-        saveTask(instanceB, testClock.now(), DataHolder.of(data));
-        //When
-        var executions = taskRepository.getExecutions(instanceB.getTaskName(), false).collectList().block();
-        //Then
-        Assertions.assertThat(executions)
-                .hasSize(1)
-                .first()
-                .usingRecursiveComparison(recursiveConfiguration)
-                .isEqualTo(new ExecutionEntity(instanceB.getTaskName(),
-                        instanceB.getId(),
-                        data,
-                        testClock.now(),
-                        false,
-                        null,
-                        null,
-                        null,
-                        0,
-                        null,
-                        1
-                ));
-    }
-
-    @Test
-    void getExecutionsForView() {
-        TaskInstance<String> instanceB = taskB.instance("1");
-        byte[] data = "\"TestData\"".getBytes(StandardCharsets.UTF_8);
-        saveTask(instanceB, testClock.now(), DataHolder.of(data));
-        //When
-        var executions = taskRepository.getExecutionsForView(instanceB.getTaskName(), false).collectList().block();
+        var executions = taskRepository.findExecutions(TaskExample.scheduled(instanceB.getTaskName()))
+                .collectList().block();
         //Then
         Assertions.assertThat(executions)
                 .hasSize(1)
@@ -273,7 +225,7 @@ class PostgresTaskRepositoryTest extends AbstractPostgresTest {
         saveTask(taskA.instance("2"), testClock.now(), DataHolder.empty());
         saveTask(taskB.instance("2"), testClock.now(), DataHolder.empty());
         //When
-        List<ExecutionEntity> all = taskRepository.getAll().collectList().block();
+        List<ExecutionEntity> all = taskRepository.findExecutions(TaskExample.all()).collectList().block();
         //Then
         assertThat(all)
                 .hasSize(3)
@@ -359,7 +311,7 @@ class PostgresTaskRepositoryTest extends AbstractPostgresTest {
     }
 
     private List<ExecutionEntity> getAllTask() {
-        return taskRepository.getAll().collectList().blockOptional().orElse(List.of());
+        return taskRepository.findExecutions(TaskExample.all()).collectList().blockOptional().orElse(List.of());
     }
 
     private void saveTask(TaskInstanceId instance, Instant executionTime, DataHolder<byte[]> data) {

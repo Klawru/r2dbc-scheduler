@@ -45,6 +45,9 @@
     <Python>
       <option name="USE_CONTINUATION_INDENT_FOR_ARGUMENTS" value="true" />
     </Python>
+    <SqlCodeStyleSettings version="6">
+      <option name="KEYWORD_CASE" value="2" />
+    </SqlCodeStyleSettings>
     <codeStyleSettings language="JAVA">
       <option name="IF_BRACE_FORCE" value="3" />
     </codeStyleSettings>

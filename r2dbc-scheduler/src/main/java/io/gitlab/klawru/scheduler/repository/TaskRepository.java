@@ -16,6 +16,7 @@
  */
 package io.gitlab.klawru.scheduler.repository;
 
+import io.gitlab.klawru.scheduler.TaskExample;
 import io.gitlab.klawru.scheduler.task.instance.TaskInstanceId;
 import io.gitlab.klawru.scheduler.util.DataHolder;
 import reactor.core.publisher.Flux;
@@ -29,9 +30,9 @@ public interface TaskRepository {
 
     Flux<ExecutionEntity> lockAndGetDue(String schedulerName, Instant now, int limit, Collection<String> unresolvedTaskNames);
 
-    Mono<Void> remove(TaskInstanceId taskInstanceId);
-
     Mono<Integer> updateHeartbeat(TaskInstanceId taskInstanceId, long version, Instant now);
+
+    Mono<Void> remove(TaskInstanceId taskInstanceId);
 
     Mono<Integer> removeAllExecutions(String taskName);
 
@@ -45,13 +46,11 @@ public interface TaskRepository {
 
     Mono<Integer> removeOldUnresolvedTask(Collection<String> unresolvedName, Instant from);
 
-    Flux<ExecutionEntity> getAll();
-
     Flux<ExecutionEntity> getDeadExecution(Instant from);
 
-    Mono<ExecutionEntity> getExecution(TaskInstanceId id);
+    Mono<ExecutionEntity> findExecution(TaskInstanceId id);
 
-    Flux<ExecutionEntity> getExecutions(String name, boolean picked);
+    <T> Flux<ExecutionEntity> findExecutions(TaskExample<T> taskExample);
 
-    Flux<ExecutionEntity> getExecutionsForView(String name, boolean picked);
+    <T> Mono<Long> countExecutions(TaskExample<T> taskExample);
 }

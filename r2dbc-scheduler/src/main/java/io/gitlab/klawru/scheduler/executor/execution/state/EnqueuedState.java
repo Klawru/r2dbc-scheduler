@@ -22,7 +22,7 @@ import java.util.UUID;
 
 @Getter
 @ToString(callSuper = true)
-public class EnqueuedState extends ExecutionState {
+public class EnqueuedState extends AbstractExecutionState {
 
     private final UUID enqueuedId;
 

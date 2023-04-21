@@ -27,7 +27,7 @@ public class SchedulerMetricsRegistry implements SchedulerListener {
 
     @Override
     public void afterExecution(Execution<?> execution) {
-        ExecutionStateName state = execution.getLastState().getName();
+        ExecutionStateName state = execution.currentState().getName();
         if (ExecutionStateName.COMPLETE.equals(state)) {
             completeTaskCount.incrementAndGet();
         } else {

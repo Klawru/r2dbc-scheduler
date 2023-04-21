@@ -29,69 +29,8 @@ public interface PreparedStatementSetter {
 
     BindTarget setParameters(BindTarget target);
 
-    default Statement apply(Statement statement) {
-        setParameters(new StatementBind(statement));
-        return statement;
-    }
-
     default DatabaseClient.GenericExecuteSpec apply(DatabaseClient.GenericExecuteSpec statement) {
         return ((DatabaseClientBind) setParameters(new DatabaseClientBind(statement))).getSpec();
-    }
-
-    @Getter
-    @AllArgsConstructor
-    class StatementBind implements BindTarget {
-
-        private final Statement statement;
-
-        @Override
-        public BindTarget bind(String identifier, @NotNull Object value) {
-            this.statement.bind(identifier, value);
-            return this;
-        }
-
-        @Override
-        public <T> BindTarget bind(String identifier, T value, Class<T> type) {
-            if (value != null) {
-                bind(identifier, value);
-            } else {
-                bindNull(identifier, type);
-            }
-            return this;
-        }
-
-        @Override
-        public BindTarget bind(int index, @NotNull Object value) {
-            this.statement.bind(index, value);
-            return this;
-        }
-
-        @Override
-        public <T> BindTarget bind(int index, T value, Class<T> type) {
-            if (value != null) {
-                bind(index, value);
-            } else {
-                bind(index, type);
-            }
-            return this;
-        }
-
-        @Override
-        public BindTarget bindNull(String identifier, Class<?> type) {
-            this.statement.bindNull(identifier, type);
-            return this;
-        }
-
-        @Override
-        public BindTarget bindNull(int index, Class<?> type) {
-            this.statement.bindNull(index, type);
-            return this;
-        }
-
-        @Override
-        public void fetchSize(int rows) {
-            this.statement.fetchSize(rows);
-        }
     }
 
     @Getter
