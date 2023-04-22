@@ -47,23 +47,6 @@
                             <goal>report-aggregate</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>merge-exec</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>merge</goal>
-                        </goals>
-                        <configuration>
-                            <fileSets>
-                                <fileSet>
-                                    <directory>${code.coverage.project.folder}</directory>
-                                    <includes>
-                                        <include>**/target/jacoco.exec</include>
-                                    </includes>
-                                </fileSet>
-                            </fileSets>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
         </plugins>

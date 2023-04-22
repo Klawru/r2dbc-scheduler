@@ -20,7 +20,7 @@ import io.gitlab.klawru.scheduler.SchedulerClient;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
-class SchedulerContextReadyStarter implements SchedulerStarter {
+public class SchedulerContextReadyStarter implements SchedulerStarter {
 
     SchedulerClient schedulerClient;
 

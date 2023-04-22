@@ -18,8 +18,8 @@ package io.gitlab.klawru.scheduler.executor;
 
 import io.gitlab.klawru.scheduler.ExecutionOperations;
 import io.gitlab.klawru.scheduler.exception.AbstractSchedulerException;
-import io.gitlab.klawru.scheduler.executor.execution.state.EnqueuedState;
 import io.gitlab.klawru.scheduler.executor.execution.state.AbstractExecutionState;
+import io.gitlab.klawru.scheduler.executor.execution.state.EnqueuedState;
 import io.gitlab.klawru.scheduler.stats.SchedulerMetricsRegistry;
 import io.gitlab.klawru.scheduler.task.AbstractTask;
 import io.gitlab.klawru.scheduler.task.ExecutionContext;
@@ -143,6 +143,11 @@ public class TaskExecutorService implements TaskExecutor {
     @Override
     public int getNumberInQueueOrProcessing() {
         return currentlyInQueueOrProcessing.get();
+    }
+
+    @Override
+    public int getFreePlaceInQueue() {
+        return taskUpperLimit() - getNumberInQueueOrProcessing();
     }
 
     @Override

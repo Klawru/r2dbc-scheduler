@@ -60,8 +60,14 @@ public class TaskFetchService implements StartPauseService {
     @NotNull
     protected Disposable startTaskFetch() {
         log.debug("Start TaskFetchService on '{}'", config.getSchedulerName());
+        return getFetchTaskFlux()
+                .subscribe(this::addToExecutor);
+    }
+
+    @NotNull
+    private Flux<Execution<?>> getFetchTaskFlux() {
         return Flux.defer(() -> {
-                    int executionsToFetch = executor.taskUpperLimit() - executor.getNumberInQueueOrProcessing();
+                    int executionsToFetch = executor.getFreePlaceInQueue();
                     return taskService.lockAndGetDue(executionsToFetch);
                 })
                 .publishOn(schedulers.getHousekeeperScheduler())
@@ -74,8 +80,7 @@ public class TaskFetchService implements StartPauseService {
                 )
                 .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, config.getPollingInterval()).scheduler(schedulers.getHousekeeperScheduler()))
                 .doOnError(throwable -> log.error("Unexpected exception on task fetch", throwable))
-                .subscribeOn(schedulers.getHousekeeperScheduler())
-                .subscribe(this::addToExecutor);
+                .subscribeOn(schedulers.getHousekeeperScheduler());
     }
 
     protected <T> void addToExecutor(Execution<T> execution) {

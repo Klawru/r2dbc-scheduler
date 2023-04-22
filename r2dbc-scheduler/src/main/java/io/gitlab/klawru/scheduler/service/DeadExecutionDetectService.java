@@ -38,7 +38,6 @@ public class DeadExecutionDetectService implements StartPauseService {
     private final TaskService taskService;
     private final TaskSchedulers schedulers;
     private final SchedulerConfiguration config;
-    private final Trigger trigger;
     private Disposable deadExecutionDetectDisposable;
 
     public DeadExecutionDetectService(TaskService taskService,
@@ -48,7 +47,6 @@ public class DeadExecutionDetectService implements StartPauseService {
         this.schedulers = schedulers;
         this.config = config;
         this.deadExecutionDetectDisposable = AlwaysDisposed.get();
-        this.trigger = new Trigger();
     }
 
     @Override
@@ -66,12 +64,8 @@ public class DeadExecutionDetectService implements StartPauseService {
         Duration polingInterval = config.getPollingInterval().multipliedBy(2);
 
         return taskService.rescheduleDeadExecutionTask(deadExecutionDuration)
-                .log(this.getClass().getName())
                 .doOnError(throwable -> log.error("Exception on reschedule dead execution", throwable))
-                .repeatWhen(countFlux -> countFlux.delayUntil(aLong -> Flux.firstWithSignal(
-                        Mono.delay(polingInterval, schedulers.getHousekeeperScheduler()),
-                        trigger.getFlux()).log("signal"))
-                )
+                .repeatWhen(countFlux -> countFlux.delaySequence(polingInterval, schedulers.getHousekeeperScheduler()))
                 .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, polingInterval)
                         .scheduler(schedulers.getHousekeeperScheduler())
                 )
@@ -87,9 +81,5 @@ public class DeadExecutionDetectService implements StartPauseService {
                     log.debug("Stop dead execution detect");
                     disposable.dispose();
                 });
-    }
-
-    public void detect() {
-        trigger.emit();
     }
 }
