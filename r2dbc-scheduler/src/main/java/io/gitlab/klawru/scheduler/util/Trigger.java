@@ -18,6 +18,9 @@ package io.gitlab.klawru.scheduler.util;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
+/**
+ * Trigger to start any processes.
+ */
 public class Trigger {
 
     final Sinks.Many<Long> sink;

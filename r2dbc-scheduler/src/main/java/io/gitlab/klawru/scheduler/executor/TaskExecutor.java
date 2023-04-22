@@ -31,6 +31,8 @@ public interface TaskExecutor {
 
     int getNumberInQueueOrProcessing();
 
+    int getFreePlaceInQueue();
+
     int taskUpperLimit();
 
     int taskLowerLimit();
