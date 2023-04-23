@@ -6,11 +6,12 @@
 
     <groupId>io.gitlab.klawru</groupId>
     <artifactId>parent-r2dbc-scheduler</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>pom</packaging>
 
-    <name>parent-r2dbc-scheduler</name>
+    <name>io.gitlab.klawru:parent-r2dbc-scheduler</name>
     <url>https://gitlab.com/klawru/r2dbc-scheduler</url>
+    <description>Reactive cluster-friendly scheduler for Java</description>
 
     <licenses>
         <license>

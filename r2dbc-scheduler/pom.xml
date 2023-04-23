@@ -8,14 +8,14 @@
     <parent>
         <artifactId>parent-r2dbc-scheduler</artifactId>
         <groupId>io.gitlab.klawru</groupId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
     </parent>
 
     <artifactId>r2dbc-scheduler</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>jar</packaging>
 
-    <name>${project.groupId}:${project.artifactId}</name>
+    <name>io.gitlab.klawru:r2dbc-scheduler</name>
     <description>Reactive task scheduler with R2DBC</description>
     <url>https://gitlab.com/klawru/r2dbc-scheduler</url>
 
